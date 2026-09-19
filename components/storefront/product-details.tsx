@@ -14,6 +14,7 @@ interface ProductDetailsProps {
 export function ProductDetails({ product, images, variants }: ProductDetailsProps) {
   const [activeImage, setActiveImage] = useState(images[0]);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [qty, setQty] = useState(1);
   const [sizeError, setSizeError] = useState(false);
   const [added, setAdded] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -42,20 +43,22 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
 
     if (!mounted) return;
 
-    // Dynamically import to avoid SSR issues
     const { useCartStore } = await import("@/lib/stores/cart.store");
     const addItem = useCartStore.getState().addItem;
 
-    addItem({
-      variantId: selectedVariant.id,
-      productId: product.id,
-      productSlug: product.slug,
-      name: product.name,
-      imageUrl: images[0]?.url ?? "",
-      price: currentPrice,
-      size: selectedSize,
-      color: selectedVariant.color,
-    });
+    // Call addItem once per qty unit so the store's increment logic works correctly
+    for (let i = 0; i < qty; i++) {
+      addItem({
+        variantId: selectedVariant.id,
+        productId: product.id,
+        productSlug: product.slug,
+        name: product.name,
+        imageUrl: images[0]?.url ?? "",
+        price: currentPrice,
+        size: selectedSize,
+        color: selectedVariant.color,
+      });
+    }
 
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -92,7 +95,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
         </div>
 
         {/* Main Image */}
-        <div className="relative flex-1 aspect-[3/4] bg-sxtn-gray-900">
+        <div className="relative flex-1 aspect-[3/4] bg-sxtn-gray-900 overflow-hidden rounded-lg">
           {activeImage ? (
             <Image
               src={activeImage.url}
@@ -133,16 +136,10 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
 
         {/* Size Selector */}
         <div className="mb-10">
-          <div className="flex justify-between items-center mb-4">
+          <div className="mb-4">
             <span className="text-xs uppercase tracking-widest text-sxtn-gray-400">
               Select Size
             </span>
-            <button
-              type="button"
-              className="text-xs uppercase tracking-widest text-sxtn-gray-400 underline underline-offset-4 touch-manipulation"
-            >
-              Size Guide
-            </button>
           </div>
 
           <div className="grid grid-cols-4 gap-3">
@@ -175,12 +172,40 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
           </div>
         </div>
 
-        {/* Size error message */}
+        {/* Size error */}
         {sizeError && (
           <p className="text-amber-400 text-xs text-center py-2 mb-3 bg-amber-400/10">
             Please select a size first
           </p>
         )}
+
+        {/* Quantity Selector */}
+        <div className="mb-5">
+          <span className="text-xs uppercase tracking-widest text-sxtn-gray-400 block mb-3">
+            Quantity
+          </span>
+          <div className="inline-flex items-center border border-white/20">
+            <button
+              type="button"
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="h-12 w-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors text-lg touch-manipulation select-none"
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span className="h-12 w-12 flex items-center justify-center font-display text-white text-base select-none">
+              {qty}
+            </span>
+            <button
+              type="button"
+              onClick={() => setQty((q) => Math.min(10, q + 1))}
+              className="h-12 w-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors text-lg touch-manipulation select-none"
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        </div>
 
         {/* Add to Cart */}
         <button
@@ -200,18 +225,51 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
           {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Cart" : "Add to Cart"}
         </button>
 
-        {/* Info */}
-        <div className="mt-12 space-y-6 border-t border-white/10 pt-8">
-          <div>
-            <h4 className="text-xs uppercase tracking-widest text-white mb-2">Shipping</h4>
-            <p className="text-sm text-sxtn-gray-400">
-              Free shipping on all prepaid orders. Ships within 2–3 business days.
-            </p>
+        {/* Info Blocks */}
+        <div className="mt-12 space-y-8 border-t border-white/10 pt-8">
+          {/* Shipping / Returns */}
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-xs uppercase tracking-widest text-white mb-2">Shipping</h4>
+              <p className="text-sm text-sxtn-gray-400">
+                Free shipping on all prepaid orders. Ships within 2–3 business days.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs uppercase tracking-widest text-white mb-2">Returns</h4>
+              <p className="text-sm text-sxtn-gray-400">7-day hassle-free returns and exchanges.</p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-xs uppercase tracking-widest text-white mb-2">Returns</h4>
-            <p className="text-sm text-sxtn-gray-400">7-day hassle-free returns and exchanges.</p>
-          </div>
+
+          {/* Features */}
+          {product.features && product.features.length > 0 && (
+            <div className="border-t border-white/10 pt-6">
+              <h4 className="text-xs uppercase tracking-widest text-white mb-4">Features</h4>
+              <ul className="space-y-2">
+                {product.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-sxtn-gray-300">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-white/40 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Composition & Wash Care */}
+          {product.wash_care && product.wash_care.length > 0 && (
+            <div className="border-t border-white/10 pt-6">
+              <h4 className="text-xs uppercase tracking-widest text-white mb-4">Composition &amp; Wash Care</h4>
+              <ul className="space-y-2">
+                {product.wash_care.map((w, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-sxtn-gray-300">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-white/40 shrink-0" />
+                    {w}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>

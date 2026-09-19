@@ -71,6 +71,8 @@ export type Database = {
           compare_at_price: number | null;
           is_active:        boolean;
           tags:             string[];
+          features:         string[] | null;
+          wash_care:        string[] | null;
           created_at:       string;
           updated_at:       string;
         };
@@ -84,6 +86,8 @@ export type Database = {
           compare_at_price?: number | null;
           is_active?:        boolean;
           tags?:             string[];
+          features?:         string[] | null;
+          wash_care?:        string[] | null;
           created_at?:       string;
           updated_at?:       string;
         };
@@ -96,6 +100,8 @@ export type Database = {
           compare_at_price?: number | null;
           is_active?:        boolean;
           tags?:             string[];
+          features?:         string[] | null;
+          wash_care?:        string[] | null;
           updated_at?:       string;
         };
       };

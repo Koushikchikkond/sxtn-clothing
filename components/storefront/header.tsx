@@ -18,6 +18,7 @@ export function Header() {
   const [isScrolling, setIsScrolling] = useState(false);
   const [mounted, setMounted] = useState(false);
   const cartCount = useCartStore((s) => s.itemCount());
+  const openCart  = useCartStore((s) => s.openCart);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -77,8 +78,8 @@ export function Header() {
               <button aria-label="Search" className="hover:opacity-70 transition-opacity">
                 <Search className="h-5 w-5" />
               </button>
-              <Link
-                href="/cart"
+              <button
+                onClick={openCart}
                 aria-label={`Cart — ${mounted ? cartCount : 0} items`}
                 className="relative hover:opacity-70 transition-opacity"
               >
@@ -93,7 +94,7 @@ export function Header() {
                     {cartCount > 9 ? "9+" : String(cartCount)}
                   </motion.span>
                 )}
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -114,14 +115,14 @@ export function Header() {
             className="h-8 w-auto"
           />
         </Link>
-        <Link href="/cart" style={{ pointerEvents: "auto" }} className="relative">
+        <button onClick={openCart} style={{ pointerEvents: "auto" }} className="relative">
           <ShoppingBag className="h-6 w-6 text-white" />
           {mounted && cartCount > 0 && (
             <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-[10px] font-bold">
               {cartCount > 9 ? "9+" : String(cartCount)}
             </span>
           )}
-        </Link>
+        </button>
       </div>
 
       {/* ── Mobile Bottom Nav Pill ───────────────────────────────
@@ -166,14 +167,14 @@ export function Header() {
               <circle cx="12" cy="7" r="4" />
             </svg>
           </Link>
-          <Link href="/cart" className="p-3 text-white/80 relative">
+          <button onClick={openCart} className="p-3 text-white/80 relative">
             <ShoppingBag className="h-[22px] w-[22px]" />
             {mounted && cartCount > 0 && (
               <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-[10px] font-bold">
                 {cartCount > 9 ? "9+" : String(cartCount)}
               </span>
             )}
-          </Link>
+          </button>
         </nav>
       </div>
 

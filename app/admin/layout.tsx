@@ -1,5 +1,7 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
 export default async function AdminLayout({
   children,
@@ -14,90 +16,88 @@ export default async function AdminLayout({
   // if (profile?.role !== "admin") redirect("/");
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#ffffff",
-        color: "#000000",
-      }}
-    >
-      {/* Admin Top Bar */}
-      <header
-        style={{
-          borderBottom: "2px solid #000",
-          backgroundColor: "#000",
-          color: "#fff",
-          padding: "0 2rem",
-          height: "64px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+    <div className="admin-shell">
+      <style>{`
+        .admin-shell {
+          min-height: 100vh;
+          background: #f5f5f5;
+          display: flex;
+          flex-direction: column;
+          color: #000;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .admin-topbar {
+          height: 56px;
+          background: #000;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 1.25rem;
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          flex-shrink: 0;
+        }
+        .admin-body {
+          display: flex;
+          flex: 1;
+        }
+        .admin-main {
+          flex: 1;
+          padding: 1.5rem;
+          overflow-y: auto;
+          min-width: 0;
+        }
+        @media (min-width: 768px) {
+          .admin-main {
+            padding: 2rem;
+          }
+        }
+      `}</style>
+
+      {/* ── Top Bar ─────────────────────────────── */}
+      <header className="admin-topbar">
+        <Link href="/admin" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <Image
+            src="/brand-logo.svg"
+            alt="SXTN"
+            width={80}
+            height={32}
+            priority
+            style={{ height: "28px", width: "auto" }}
+          />
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", marginLeft: "10px" }}>
+            ADMIN
+          </span>
+        </Link>
+
         <Link
           href="/"
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: "1.75rem",
-            letterSpacing: "0.05em",
             color: "#fff",
             textDecoration: "none",
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            border: "1px solid rgba(255,255,255,0.25)",
+            padding: "5px 12px",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
           }}
         >
-          SXTN ADMIN
+          ← Storefront
         </Link>
-
-        <nav style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
-          {[
-            { href: "/admin/products", label: "Products" },
-            { href: "/admin/categories", label: "Categories" },
-            { href: "/admin/orders", label: "Orders" },
-          ].map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              {label}
-            </Link>
-          ))}
-          <Link
-            href="/"
-            style={{
-              padding: "6px 14px",
-              border: "1.5px solid #fff",
-              color: "#fff",
-              textDecoration: "none",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-            }}
-          >
-            ← Storefront
-          </Link>
-        </nav>
       </header>
 
-      {/* Page Content */}
-      <main
-        style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "2.5rem 2rem",
-          backgroundColor: "#ffffff",
-          color: "#000000",
-        }}
-      >
-        {children}
-      </main>
+      {/* ── Body ────────────────────────────────── */}
+      <div className="admin-body">
+        <AdminSidebar />
+        <main className="admin-main">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
