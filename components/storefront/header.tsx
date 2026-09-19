@@ -2,17 +2,178 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { ShoppingBag, Search, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ShoppingBag, Search, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart.store";
+import { createClient } from "@/lib/supabase/client";
 
 const NAV_LINKS = [
   { href: "/collections/all", label: "Shop All" },
   { href: "/collections/t-shirts", label: "T-Shirts" },
 ];
 
+// ── Desktop Profile Dropdown ───────────────────────────────────
+function ProfileDropdown() {
+  const [open, setOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
+
+  // Check session on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setLoggedIn(true);
+        setEmail(data.user.email ?? "");
+      }
+    });
+  }, []);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setLoggedIn(false);
+    setOpen(false);
+    window.location.href = "/";
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((p) => !p)}
+        aria-label="Account"
+        className="hover:opacity-70 transition-opacity text-white"
+        style={{ display: "flex", alignItems: "center" }}
+      >
+        <User className="h-5 w-5" />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ duration: 0.18 }}
+            style={{
+              position: "absolute",
+              top: "calc(100% + 14px)",
+              right: 0,
+              width: "220px",
+              background: "#111",
+              border: "1px solid rgba(255,255,255,0.12)",
+              zIndex: 100,
+              overflow: "hidden",
+            }}
+          >
+            {loggedIn ? (
+              <>
+                {/* Email header */}
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <p style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "2px" }}>Signed in as</p>
+                  <p style={{ fontSize: "0.78rem", color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email}</p>
+                </div>
+
+                {/* Nav links */}
+                {[
+                  { href: "/account", label: "Profile" },
+                  { href: "/account/orders", label: "My Orders" },
+                  { href: "/account/addresses", label: "Addresses" },
+                  { href: "/account/wishlist", label: "Wishlist" },
+                ].map(({ href, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    style={{
+                      display: "block",
+                      padding: "11px 16px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.75)",
+                      textDecoration: "none",
+                      borderBottom: "1px solid rgba(255,255,255,0.05)",
+                      transition: "background 0.15s, color 0.15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)";
+                      (e.currentTarget as HTMLAnchorElement).style.color = "#fff";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                      (e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.75)";
+                    }}
+                  >
+                    {label}
+                  </Link>
+                ))}
+
+                {/* Sign out */}
+                <button
+                  onClick={handleSignOut}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "11px 16px",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: "#ef4444",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,0.08)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "transparent")}
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              /* Not logged in */
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  style={{ display: "block", padding: "12px 16px", fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", background: "#fff", textAlign: "center", color: "#000" }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setOpen(false)}
+                  style={{ display: "block", padding: "11px 16px", fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", textDecoration: "none", textAlign: "center" }}
+                >
+                  Create Account
+                </Link>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Main Header ────────────────────────────────────────────────
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
@@ -74,10 +235,15 @@ export function Header() {
               ))}
             </nav>
 
+            {/* Right icons: Search | Account | Cart */}
             <div className="flex items-center gap-6 text-white">
               <button aria-label="Search" className="hover:opacity-70 transition-opacity">
                 <Search className="h-5 w-5" />
               </button>
+
+              {/* ── Profile Dropdown (desktop only) ── */}
+              <ProfileDropdown />
+
               <button
                 onClick={openCart}
                 aria-label={`Cart — ${mounted ? cartCount : 0} items`}
@@ -100,10 +266,7 @@ export function Header() {
         </div>
       </header>
 
-      {/* ── Mobile Top Bar ───────────────────────────────────────
-           IMPORTANT: height is ONLY what is needed for the logo.
-           NO full-width invisible overlay. pointer-events on the
-           element itself so nothing is accidentally blocked.       */}
+      {/* ── Mobile Top Bar ─────────────────────────────────────── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 pt-4 pb-8 bg-gradient-to-b from-black/70 to-transparent" style={{ pointerEvents: "none" }}>
         <Link href="/" style={{ pointerEvents: "auto" }}>
           <Image
@@ -125,8 +288,7 @@ export function Header() {
         </button>
       </div>
 
-      {/* ── Mobile Bottom Nav Pill ───────────────────────────────
-           Slides away while scrolling so it never blocks content. */}
+      {/* ── Mobile Bottom Nav Pill ─────────────────────────────── */}
       <div
         className={cn(
           "md:hidden fixed bottom-6 left-4 right-4 z-50",
@@ -178,7 +340,7 @@ export function Header() {
         </nav>
       </div>
 
-      {/* ── Mobile Fullscreen Menu ───────────────────────────── */}
+      {/* ── Mobile Fullscreen Menu ──────────────────────────── */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div

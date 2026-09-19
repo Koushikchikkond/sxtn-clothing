@@ -1,6 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
 export default async function AdminLayout({
@@ -8,12 +10,29 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // TODO: Re-enable auth guard after setting admin role in Supabase
-  // const supabase = await createClient();
-  // const { data: { user } } = await supabase.auth.getUser();
-  // if (!user) redirect("/login");
-  // const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  // if (profile?.role !== "admin") redirect("/");
+  // ── Auth Guard ────────────────────────────────────────────────
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Not logged in → redirect to login
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Check admin role in profiles table
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  // Not an admin → redirect to homepage
+  if (!profile || (profile as any).role !== "admin") {
+    redirect("/?error=unauthorized");
+  }
+  // ─────────────────────────────────────────────────────────────
 
   return (
     <div className="admin-shell">
@@ -71,24 +90,29 @@ export default async function AdminLayout({
           </span>
         </Link>
 
-        <Link
-          href="/"
-          style={{
-            color: "#fff",
-            textDecoration: "none",
-            fontSize: "0.7rem",
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            border: "1px solid rgba(255,255,255,0.25)",
-            padding: "5px 12px",
-            display: "flex",
-            alignItems: "center",
-            gap: "5px",
-          }}
-        >
-          ← Storefront
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.72rem", letterSpacing: "0.06em" }}>
+            {user.email}
+          </span>
+          <Link
+            href="/"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              border: "1px solid rgba(255,255,255,0.25)",
+              padding: "5px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+            }}
+          >
+            ← Storefront
+          </Link>
+        </div>
       </header>
 
       {/* ── Body ────────────────────────────────── */}
