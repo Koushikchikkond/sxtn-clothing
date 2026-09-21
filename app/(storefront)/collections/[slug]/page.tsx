@@ -58,9 +58,9 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   }
 
   return (
-    <div className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
+    <div className="pt-32 pb-24 min-h-screen">
       {/* Header */}
-      <div className="mb-12">
+      <div className="mb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <h1 className="font-display text-4xl sm:text-5xl uppercase tracking-widest text-sxtn-white mb-2">
           {collectionTitle}
         </h1>
@@ -69,8 +69,10 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
         </p>
       </div>
 
-      {/* Grid */}
-      <ProductGrid products={(products as unknown) as ProductWithImages[]} />
+      {/* Grid — Edge to Edge */}
+      <div className="w-full px-0">
+        <ProductGrid products={(products as unknown) as ProductWithImages[]} />
+      </div>
     </div>
   );
 }

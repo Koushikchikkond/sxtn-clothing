@@ -21,7 +21,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/products/${product.slug}`} className="group block">
-      <div className="relative aspect-[3/4] mb-4 bg-sxtn-gray-900 overflow-hidden rounded-lg">
+      <div className="relative aspect-[3/4] mb-3 bg-sxtn-gray-900 overflow-hidden">
         {primaryImage ? (
           <>
             <Image
@@ -55,16 +55,16 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
       </div>
 
-      <div className="space-y-1">
-        <h3 className="font-display text-base tracking-widest uppercase text-sxtn-white">
+      <div className="pt-2 pb-1 px-2 space-y-1.5">
+        <h3 className="font-display text-base sm:text-lg md:text-xl font-bold tracking-tight uppercase text-white leading-snug">
           {product.name}
         </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sxtn-gray-400 text-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="font-display text-base sm:text-lg md:text-xl font-bold text-white tracking-tight">
             ₹{product.price.toLocaleString("en-IN")}
           </span>
           {product.compare_at_price && (
-            <span className="text-sxtn-gray-600 text-xs line-through">
+            <span className="text-xs sm:text-sm text-white/40 line-through">
               ₹{product.compare_at_price.toLocaleString("en-IN")}
             </span>
           )}

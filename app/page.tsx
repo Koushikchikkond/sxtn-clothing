@@ -74,8 +74,8 @@ export default async function Home() {
       </section>
 
       {/* ─── Latest Drops (Live from Supabase) ───────────────────── */}
-      <section className="py-24 px-4 sm:px-6 lg:px-12 w-full mx-auto">
-        <div className="flex items-end justify-between mb-12">
+      <section className="py-24 w-full mx-auto">
+        <div className="flex items-end justify-between mb-12 px-4 sm:px-6 lg:px-12">
           <h2 className="font-display text-5xl md:text-7xl uppercase tracking-wide">
             Latest Drops
           </h2>
@@ -89,7 +89,7 @@ export default async function Home() {
 
         {products.length === 0 ? (
           /* Empty state — shown when no products are in Supabase yet */
-          <div className="py-24 flex flex-col items-center justify-center border border-white/10 text-center gap-4">
+          <div className="mx-4 sm:mx-6 lg:mx-12 py-24 flex flex-col items-center justify-center border border-white/10 text-center gap-4">
             <ShoppingBag className="w-12 h-12 text-white/20" />
             <p className="text-white/40 text-sm uppercase tracking-widest">
               No products yet. Add your first drop in the admin panel.
@@ -102,7 +102,7 @@ export default async function Home() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+          <div className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12 px-0">
             {products.map((product) => {
               const cover = [...(product.product_images ?? [])]
                 .sort((a, b) => a.position - b.position)[0];
@@ -111,7 +111,7 @@ export default async function Home() {
                 <Link
                   key={product.id}
                   href={`/products/${product.slug}`}
-                  className="group flex flex-col gap-3 md:gap-4"
+                  className="group flex flex-col gap-3"
                 >
                   <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
                     {cover ? (
@@ -132,16 +132,16 @@ export default async function Home() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-col gap-0.5 md:gap-1">
-                    <h3 className="font-medium tracking-widest uppercase text-xs md:text-sm">
+                  <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
+                    <h3 className="font-display font-bold tracking-tight uppercase text-base sm:text-lg md:text-xl text-white leading-snug">
                       {product.name}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="font-display tracking-widest text-sm md:text-base">
+                    <div className="flex items-center gap-2.5 mt-1">
+                      <p className="font-display font-bold tracking-tight text-base sm:text-lg md:text-xl text-white">
                         ₹{product.price.toLocaleString("en-IN")}
                       </p>
                       {product.compare_at_price && (
-                        <p className="text-white/30 text-xs line-through">
+                        <p className="text-xs sm:text-sm text-white/40 line-through">
                           ₹{product.compare_at_price.toLocaleString("en-IN")}
                         </p>
                       )}
@@ -153,12 +153,14 @@ export default async function Home() {
           </div>
         )}
 
-        <Link
-          href="/collections/all"
-          className="md:hidden mt-12 flex items-center justify-center gap-2 text-sm uppercase tracking-widest text-white/70 hover:text-white transition-colors border border-white/20 py-4 rounded-full"
-        >
-          View All Drops <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="px-4">
+          <Link
+            href="/collections/all"
+            className="md:hidden mt-12 flex items-center justify-center gap-2 text-sm uppercase tracking-widest text-white/70 hover:text-white transition-colors border border-white/20 py-4 rounded-full"
+          >
+            View All Drops <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </section>
 
       {/* Spacer for mobile bottom nav */}

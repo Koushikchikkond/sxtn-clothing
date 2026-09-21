@@ -172,14 +172,14 @@ export function CartDrawer() {
                           <Link
                             href={`/products/${item.productSlug}`}
                             onClick={closeCart}
-                            className="font-display uppercase tracking-widest text-sm text-white hover:text-white/70 transition-colors line-clamp-2"
+                            className="font-display uppercase tracking-tight text-base font-bold text-white hover:text-white/70 transition-colors line-clamp-2"
                           >
                             {item.name}
                           </Link>
-                          <p className="text-white/30 text-xs mt-1 uppercase tracking-wider">
+                          <p className="text-white/40 text-xs mt-1 uppercase tracking-wider font-medium">
                             {item.size}{item.color ? ` · ${item.color}` : ""}
                           </p>
-                          <p className="text-white text-sm mt-1 font-medium">
+                          <p className="font-display text-base font-bold text-white mt-1">
                             ₹{item.price.toLocaleString("en-IN")}
                           </p>
                         </div>
@@ -194,7 +194,7 @@ export function CartDrawer() {
                             >
                               <Minus className="h-3 w-3" />
                             </button>
-                            <span className="h-7 w-8 flex items-center justify-center text-xs font-medium text-white">
+                            <span className="h-7 w-8 flex items-center justify-center text-xs font-bold text-white">
                               {item.quantity}
                             </span>
                             <button
@@ -207,7 +207,7 @@ export function CartDrawer() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            <span className="font-display text-sm text-white/70">
+                            <span className="font-display font-bold text-base text-white">
                               ₹{(item.price * item.quantity).toLocaleString("en-IN")}
                             </span>
                             <button
@@ -229,22 +229,22 @@ export function CartDrawer() {
             {/* Footer — Order summary + CTA */}
             {items.length > 0 && (
               <div className="border-t border-white/10 px-6 py-5 space-y-4 bg-black">
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-sm sm:text-base">
                   <div className="flex justify-between text-white/40">
                     <span>Subtotal</span>
-                    <span>₹{subtotal.toLocaleString("en-IN")}</span>
+                    <span className="font-display font-bold text-white">₹{subtotal.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between text-white/40">
                     <span>Shipping</span>
                     <span>
                       {shippingFee === 0 ? (
-                        <span className="text-green-400">Free</span>
+                        <span className="text-green-400 font-medium">Free</span>
                       ) : (
                         `₹${shippingFee}`
                       )}
                     </span>
                   </div>
-                  <div className="flex justify-between text-white font-bold pt-2 border-t border-white/10 text-base">
+                  <div className="flex justify-between text-white font-bold pt-2 border-t border-white/10 text-lg sm:text-xl font-display">
                     <span>Total</span>
                     <span>₹{total.toLocaleString("en-IN")}</span>
                   </div>
@@ -253,7 +253,7 @@ export function CartDrawer() {
                 <Link
                   href="/checkout"
                   onClick={closeCart}
-                  className="flex items-center justify-center gap-2 w-full bg-white text-black h-14 font-display uppercase tracking-widest text-sm hover:bg-white/90 active:scale-[0.98] transition-all"
+                  className="flex items-center justify-center gap-2 w-full bg-white text-black h-14 font-display font-bold uppercase tracking-widest text-base hover:bg-white/90 active:scale-[0.98] transition-all"
                 >
                   Checkout <ArrowRight className="h-4 w-4" />
                 </Link>

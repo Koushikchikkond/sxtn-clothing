@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* ─── SXTN Brand Design Tokens ─────────────────────────────────────────────── */
@@ -28,9 +28,9 @@
   --card: var(--sxtn-gray-900);
   --card-foreground: var(--sxtn-white);
 
-  /* Typography Scale */
-  --font-display: "Bebas Neue", sans-serif;
-  --font-body: "Inter", sans-serif;
+  /* Typography Scale — Space Grotesk (Brutalist Streetwear Display) & Plus Jakarta Sans (Body) */
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
 
   /* Spacing / Layout */
   --radius: 0px; /* Brutalist — no border radius */
@@ -105,10 +105,13 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6, .font-display {
   font-family: var(--font-display);
-  letter-spacing: 0.02em;
-  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.font-body {
+  font-family: var(--font-body);
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────────── */

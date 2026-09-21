@@ -83,7 +83,7 @@ export default function WishlistPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12">
           {items.map(({ product_id, products }) => {
             if (!products) return null;
             const coverImage = [...(products.product_images ?? [])]
@@ -114,18 +114,18 @@ export default function WishlistPage() {
                   </button>
                 </Link>
                 {/* Info */}
-                <div className="mt-3 space-y-1">
+                <div className="mt-2.5 space-y-1 px-2 pb-1">
                   <Link href={`/products/${products.slug}`} className="block">
-                    <p className="text-white text-sm font-medium truncate group-hover:underline underline-offset-2">
+                    <p className="font-display font-bold uppercase tracking-tight text-base sm:text-lg text-white truncate group-hover:underline underline-offset-2">
                       {products.name}
                     </p>
                   </Link>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-medium text-sm">
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-display font-bold text-base sm:text-lg text-white">
                       ₹{products.price.toLocaleString("en-IN")}
                     </span>
                     {products.compare_at_price && (
-                      <span className="text-white/30 line-through text-xs">
+                      <span className="text-xs sm:text-sm text-white/40 line-through">
                         ₹{products.compare_at_price.toLocaleString("en-IN")}
                       </span>
                     )}

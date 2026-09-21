@@ -87,22 +87,23 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       {/* ── You May Also Like ─────────────────────── */}
       {suggestions.length > 0 && (
-        <section className="py-20 px-4 sm:px-6 lg:px-12 border-t border-white/10">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="font-display text-4xl md:text-5xl uppercase tracking-wide mb-10">
+        <section className="py-20 border-t border-white/10 w-full">
+          <div className="px-4 sm:px-6 lg:px-12 mb-10">
+            <h2 className="font-display text-4xl md:text-5xl uppercase tracking-wide">
               You May Also Like
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-              {suggestions.map((s) => {
-                const cover = [...(s.product_images ?? [])]
-                  .sort((a, b) => a.position - b.position)[0];
-                return (
-                  <Link
-                    key={s.id}
-                    href={`/products/${s.slug}`}
-                    className="group flex flex-col gap-3"
-                  >
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
+          </div>
+          <div className="grid w-full grid-cols-2 md:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12 px-0">
+            {suggestions.map((s) => {
+              const cover = [...(s.product_images ?? [])]
+                .sort((a, b) => a.position - b.position)[0];
+              return (
+                <Link
+                  key={s.id}
+                  href={`/products/${s.slug}`}
+                  className="group flex flex-col gap-3"
+                >
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
                       {cover ? (
                         <Image
                           src={cover.url}
@@ -116,16 +117,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         </div>
                       )}
                     </div>
-                    <div>
-                      <h3 className="text-white font-medium text-xs uppercase tracking-widest">
+                    <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
+                      <h3 className="font-display font-bold tracking-tight uppercase text-base sm:text-lg md:text-xl text-white leading-snug">
                         {s.name}
                       </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="font-display text-sm tracking-widest text-white">
+                      <div className="flex items-center gap-2.5 mt-1">
+                        <p className="font-display font-bold tracking-tight text-base sm:text-lg md:text-xl text-white">
                           ₹{s.price.toLocaleString("en-IN")}
                         </p>
                         {s.compare_at_price && (
-                          <p className="text-white/30 text-xs line-through">
+                          <p className="text-xs sm:text-sm text-white/40 line-through">
                             ₹{s.compare_at_price.toLocaleString("en-IN")}
                           </p>
                         )}
@@ -135,7 +136,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 );
               })}
             </div>
-          </div>
         </section>
       )}
     </div>

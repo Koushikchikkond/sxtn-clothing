@@ -71,15 +71,15 @@ export default function CartPage() {
                 <div>
                   <Link
                     href={`/products/${item.productSlug}`}
-                    className="font-display uppercase tracking-widest text-base hover:text-white/70 transition-colors"
+                    className="font-display font-bold uppercase tracking-tight text-base sm:text-lg text-white hover:text-white/70 transition-colors"
                   >
                     {item.name}
                   </Link>
-                  <p className="text-white/40 text-xs mt-1 uppercase tracking-widest">
+                  <p className="text-white/40 text-xs mt-1 uppercase tracking-widest font-medium">
                     Size: {item.size}
                     {item.color && ` · ${item.color}`}
                   </p>
-                  <p className="text-white text-sm mt-2">
+                  <p className="font-display font-bold text-base sm:text-lg text-white mt-2">
                     ₹{item.price.toLocaleString("en-IN")}
                   </p>
                 </div>
