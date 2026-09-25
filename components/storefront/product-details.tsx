@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -102,7 +102,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
               alt={activeImage.alt_text || product.name}
               fill
               priority
-              className="object-cover"
+              className="object-contain"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           ) : (
@@ -121,11 +121,11 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
 
         <div className="flex items-center gap-4 mb-8">
           <span className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
-            ₹{currentPrice.toLocaleString("en-IN")}
+            INR {currentPrice.toLocaleString("en-IN")}
           </span>
           {product.compare_at_price && (
             <span className="text-base sm:text-lg text-white/40 line-through">
-              ₹{product.compare_at_price.toLocaleString("en-IN")}
+              INR {product.compare_at_price.toLocaleString("en-IN")}
             </span>
           )}
         </div>
@@ -225,21 +225,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
           {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Cart" : "Add to Cart"}
         </button>
 
-        {/* Info Blocks */}
         <div className="mt-12 space-y-8 border-t border-white/10 pt-8">
-          {/* Shipping / Returns */}
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-display text-sm font-bold uppercase tracking-widest text-white mb-2">Shipping</h4>
-              <p className="text-sm sm:text-base text-sxtn-gray-300">
-                Free shipping on all prepaid orders. Ships within 2–3 business days.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-display text-sm font-bold uppercase tracking-widest text-white mb-2">Returns</h4>
-              <p className="text-sm sm:text-base text-sxtn-gray-300">7-day hassle-free returns and exchanges.</p>
-            </div>
-          </div>
 
           {/* Features */}
           {product.features && product.features.length > 0 && (

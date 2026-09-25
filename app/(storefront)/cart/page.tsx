@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/lib/stores/cart.store";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag } from "lucide-react";
 
-const SHIPPING_THRESHOLD = 999; // Free shipping above ₹999
+const SHIPPING_THRESHOLD = 999; // Free shipping above INR 999
 const SHIPPING_FEE = 99;
 
 export default function CartPage() {
@@ -80,7 +80,7 @@ export default function CartPage() {
                     {item.color && ` · ${item.color}`}
                   </p>
                   <p className="font-display font-bold text-base sm:text-lg text-white mt-2">
-                    ₹{item.price.toLocaleString("en-IN")}
+                    INR {item.price.toLocaleString("en-IN")}
                   </p>
                 </div>
 
@@ -119,7 +119,7 @@ export default function CartPage() {
               {/* Line Total */}
               <div className="shrink-0 text-right">
                 <p className="font-display tracking-widest text-sm">
-                  ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                  INR {(item.price * item.quantity).toLocaleString("en-IN")}
                 </p>
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function CartPage() {
             <div className="space-y-3 text-sm mb-6">
               <div className="flex justify-between text-white/60">
                 <span>Subtotal</span>
-                <span>₹{subtotal.toLocaleString("en-IN")}</span>
+                <span>INR {subtotal.toLocaleString("en-IN")}</span>
               </div>
               <div className="flex justify-between text-white/60">
                 <span>Shipping</span>
@@ -144,18 +144,18 @@ export default function CartPage() {
                   {shippingFee === 0 ? (
                     <span className="text-green-400">Free</span>
                   ) : (
-                    `₹${shippingFee}`
+                    `INR ${shippingFee}`
                   )}
                 </span>
               </div>
               {shippingFee > 0 && (
                 <p className="text-white/30 text-xs">
-                  Add ₹{(SHIPPING_THRESHOLD - subtotal).toLocaleString("en-IN")} more for free shipping
+                  Add INR {(SHIPPING_THRESHOLD - subtotal).toLocaleString("en-IN")} more for free shipping
                 </p>
               )}
               <div className="border-t border-white/10 pt-3 flex justify-between font-medium">
                 <span>Total</span>
-                <span>₹{total.toLocaleString("en-IN")}</span>
+                <span>INR {total.toLocaleString("en-IN")}</span>
               </div>
             </div>
 

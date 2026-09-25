@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -212,7 +212,7 @@ export function AccountProfileClient({ user, profile, recentOrders }: Props) {
                           {order.status}
                         </span>
                         <span className="text-white font-medium">
-                          ₹{order.total.toLocaleString("en-IN")}
+                          INR {order.total.toLocaleString("en-IN")}
                         </span>
                         <span className="text-white/20 group-hover:text-white/60 transition-colors">→</span>
                       </div>

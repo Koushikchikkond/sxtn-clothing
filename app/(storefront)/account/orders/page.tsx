@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import type { Order } from "@/types/database.types";
@@ -86,10 +86,10 @@ export default async function OrdersPage() {
                   </span>
                   <div className="text-right">
                     <p className="text-white font-medium">
-                      ₹{order.total.toLocaleString("en-IN")}
+                      INR {order.total.toLocaleString("en-IN")}
                     </p>
                     <p className="text-white/30 text-xs">
-                      +₹{order.shipping_fee} shipping
+                      +INR {order.shipping_fee} shipping
                     </p>
                   </div>
                   <span className="text-white/20 group-hover:text-white/60 transition-colors text-lg">→</span>

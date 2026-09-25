@@ -123,11 +123,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       </h3>
                       <div className="flex items-center gap-2.5 mt-1">
                         <p className="font-display font-bold tracking-tight text-base sm:text-lg md:text-xl text-white">
-                          ₹{s.price.toLocaleString("en-IN")}
+                          INR {s.price.toLocaleString("en-IN")}
                         </p>
                         {s.compare_at_price && (
                           <p className="text-xs sm:text-sm text-white/40 line-through">
-                            ₹{s.compare_at_price.toLocaleString("en-IN")}
+                            INR {s.compare_at_price.toLocaleString("en-IN")}
                           </p>
                         )}
                       </div>

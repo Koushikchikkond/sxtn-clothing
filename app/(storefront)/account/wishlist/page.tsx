@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -122,11 +122,11 @@ export default function WishlistPage() {
                   </Link>
                   <div className="flex items-center gap-2.5">
                     <span className="font-display font-bold text-base sm:text-lg text-white">
-                      ₹{products.price.toLocaleString("en-IN")}
+                      INR {products.price.toLocaleString("en-IN")}
                     </span>
                     {products.compare_at_price && (
                       <span className="text-xs sm:text-sm text-white/40 line-through">
-                        ₹{products.compare_at_price.toLocaleString("en-IN")}
+                        INR {products.compare_at_price.toLocaleString("en-IN")}
                       </span>
                     )}
                   </div>

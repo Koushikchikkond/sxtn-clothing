@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -101,7 +101,7 @@ export function CartDrawer() {
                 </div>
                 <p className="text-white/30 text-xs mt-2 tracking-wide">
                   Add{" "}
-                  <span className="text-white">₹{remaining.toLocaleString("en-IN")}</span>{" "}
+                  <span className="text-white">INR {remaining.toLocaleString("en-IN")}</span>{" "}
                   more for free shipping
                 </p>
               </div>
@@ -180,7 +180,7 @@ export function CartDrawer() {
                             {item.size}{item.color ? ` · ${item.color}` : ""}
                           </p>
                           <p className="font-display text-base font-bold text-white mt-1">
-                            ₹{item.price.toLocaleString("en-IN")}
+                            INR {item.price.toLocaleString("en-IN")}
                           </p>
                         </div>
 
@@ -208,7 +208,7 @@ export function CartDrawer() {
 
                           <div className="flex items-center gap-3">
                             <span className="font-display font-bold text-base text-white">
-                              ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                              INR {(item.price * item.quantity).toLocaleString("en-IN")}
                             </span>
                             <button
                               onClick={() => removeItem(item.variantId)}
@@ -232,7 +232,7 @@ export function CartDrawer() {
                 <div className="space-y-2 text-sm sm:text-base">
                   <div className="flex justify-between text-white/40">
                     <span>Subtotal</span>
-                    <span className="font-display font-bold text-white">₹{subtotal.toLocaleString("en-IN")}</span>
+                    <span className="font-display font-bold text-white">INR {subtotal.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between text-white/40">
                     <span>Shipping</span>
@@ -240,13 +240,13 @@ export function CartDrawer() {
                       {shippingFee === 0 ? (
                         <span className="text-green-400 font-medium">Free</span>
                       ) : (
-                        `₹${shippingFee}`
+                        `INR ${shippingFee}`
                       )}
                     </span>
                   </div>
                   <div className="flex justify-between text-white font-bold pt-2 border-t border-white/10 text-lg sm:text-xl font-display">
                     <span>Total</span>
-                    <span>₹{total.toLocaleString("en-IN")}</span>
+                    <span>INR {total.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
 

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Image from "next/image";
 import { Product, ProductImage } from "@/types/database.types";
 
@@ -61,11 +61,11 @@ export function ProductCard({ product }: ProductCardProps) {
         </h3>
         <div className="flex items-center gap-2.5">
           <span className="font-display text-base sm:text-lg md:text-xl font-bold text-white tracking-tight">
-            ₹{product.price.toLocaleString("en-IN")}
+            INR {product.price.toLocaleString("en-IN")}
           </span>
           {product.compare_at_price && (
             <span className="text-xs sm:text-sm text-white/40 line-through">
-              ₹{product.compare_at_price.toLocaleString("en-IN")}
+              INR {product.compare_at_price.toLocaleString("en-IN")}
             </span>
           )}
         </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -284,7 +284,7 @@ export default function CheckoutPage() {
                         {item.name} × {item.quantity}
                         <span className="ml-1 text-white/30 text-xs">({item.size})</span>
                       </span>
-                      <span>₹{(item.price * item.quantity).toLocaleString("en-IN")}</span>
+                      <span>INR {(item.price * item.quantity).toLocaleString("en-IN")}</span>
                     </div>
                   ))}
                 </div>
@@ -292,15 +292,15 @@ export default function CheckoutPage() {
                 <div className="space-y-2 text-sm border-t border-white/10 pt-4 mb-6">
                   <div className="flex justify-between text-white/60">
                     <span>Subtotal</span>
-                    <span>₹{subtotal.toLocaleString("en-IN")}</span>
+                    <span>INR {subtotal.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between text-white/60">
                     <span>Shipping</span>
-                    <span>{shippingFee === 0 ? <span className="text-green-400">Free</span> : `₹${shippingFee}`}</span>
+                    <span>{shippingFee === 0 ? <span className="text-green-400">Free</span> : `INR ${shippingFee}`}</span>
                   </div>
                   <div className="flex justify-between font-medium pt-2 border-t border-white/10">
                     <span>Total</span>
-                    <span>₹{total.toLocaleString("en-IN")}</span>
+                    <span>INR {total.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
 
@@ -318,7 +318,7 @@ export default function CheckoutPage() {
                   {loading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    `Pay ₹${total.toLocaleString("en-IN")}`
+                    `Pay INR ${total.toLocaleString("en-IN")}`
                   )}
                 </button>
 

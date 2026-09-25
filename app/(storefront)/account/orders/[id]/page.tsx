@@ -131,7 +131,7 @@ export default async function OrderDetailPage({
                   <p className="text-white/30 text-xs">Qty: {item.quantity}</p>
                 </div>
                 <p className="text-white font-medium whitespace-nowrap">
-                  ₹{(item.unit_price * item.quantity).toLocaleString("en-IN")}
+                  INR {(item.unit_price * item.quantity).toLocaleString("en-IN")}
                 </p>
               </li>
             ))}
@@ -139,15 +139,15 @@ export default async function OrderDetailPage({
           <div className="mt-4 pt-4 border-t border-white/10 space-y-2 text-sm">
             <div className="flex justify-between text-white/40">
               <span>Subtotal</span>
-              <span>₹{order.subtotal.toLocaleString("en-IN")}</span>
+              <span>INR {order.subtotal.toLocaleString("en-IN")}</span>
             </div>
             <div className="flex justify-between text-white/40">
               <span>Shipping</span>
-              <span>₹{order.shipping_fee.toLocaleString("en-IN")}</span>
+              <span>INR {order.shipping_fee.toLocaleString("en-IN")}</span>
             </div>
             <div className="flex justify-between text-white font-bold pt-2 border-t border-white/10">
               <span>Total</span>
-              <span>₹{order.total.toLocaleString("en-IN")}</span>
+              <span>INR {order.total.toLocaleString("en-IN")}</span>
             </div>
           </div>
         </div>

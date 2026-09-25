@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -36,42 +36,10 @@ export default async function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black" />
         </div>
 
-        <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl mx-auto mt-20">
-          <h1 className="font-display text-7xl md:text-9xl lg:text-[12rem] leading-none tracking-tighter uppercase mb-6 drop-shadow-2xl">
-            SXTN
-          </h1>
-          <p className="text-lg md:text-xl font-light tracking-wide max-w-xl mx-auto mb-10 text-white/90">
-            Define your uniform. Unapologetic streetwear for the modern era.
-          </p>
-          <Link
-            href="/collections/all"
-            className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-white px-8 py-4 text-black transition-transform hover:scale-105 active:scale-95"
-          >
-            <span className="font-medium uppercase tracking-widest text-sm relative z-10">
-              Explore Collection
-            </span>
-            <ArrowRight className="h-4 w-4 relative z-10 transition-transform group-hover:translate-x-1" />
-          </Link>
-        </div>
+
       </section>
 
-      {/* ─── Marquee Section ─────────────────────────────────────── */}
-      <section className="py-6 border-y border-white/10 bg-black overflow-hidden flex whitespace-nowrap">
-        <div className="animate-marquee flex items-center gap-8">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex items-center gap-8">
-              <span className="font-display text-4xl tracking-widest uppercase">
-                NEW ARRIVALS
-              </span>
-              <span className="text-white/50 text-2xl">✦</span>
-              <span className="font-display text-4xl tracking-widest uppercase text-white/50">
-                LIMITED EDITION
-              </span>
-              <span className="text-white/50 text-2xl">✦</span>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       {/* ─── Latest Drops (Live from Supabase) ───────────────────── */}
       <section className="py-24 w-full mx-auto">
@@ -138,11 +106,11 @@ export default async function Home() {
                     </h3>
                     <div className="flex items-center gap-2.5 mt-1">
                       <p className="font-display font-bold tracking-tight text-base sm:text-lg md:text-xl text-white">
-                        ₹{product.price.toLocaleString("en-IN")}
+                        INR {product.price.toLocaleString("en-IN")}
                       </p>
                       {product.compare_at_price && (
                         <p className="text-xs sm:text-sm text-white/40 line-through">
-                          ₹{product.compare_at_price.toLocaleString("en-IN")}
+                          INR {product.compare_at_price.toLocaleString("en-IN")}
                         </p>
                       )}
                     </div>
