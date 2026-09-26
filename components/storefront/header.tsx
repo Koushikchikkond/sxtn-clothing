@@ -95,7 +95,7 @@ function FullScreenMenu({
                 <Link
                   href={link.href}
                   onClick={onClose}
-                  className="font-display text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 block"
+                  className="font-display text-5xl md:text-6xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 block"
                 >
                   {link.label}
                 </Link>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -65,10 +65,10 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">
 
       {/* ── Image Gallery ──────────────────────────────────────────── */}
-      <div className="flex flex-col-reverse md:flex-row gap-4 md:sticky md:top-24 w-full">
+      <div className="flex flex-col-reverse md:flex-row gap-4">
         {/* Thumbnails */}
         <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible no-scrollbar pb-2 md:pb-0">
           {images.map((img) => (
