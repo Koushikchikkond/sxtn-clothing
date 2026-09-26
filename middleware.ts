@@ -2,15 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { apiRateLimit, authRateLimit, checkoutRateLimit } from "@/lib/rate-limit";
 
-/**
- * Identify the caller.
- * - If you set a cookie/header with the logged-in Supabase user id after
- *   auth, we rate-limit per user (fairer for shared IPs / mobile networks).
- * - Otherwise we fall back to IP address.
- *
- * Adjust the cookie name below to whatever you actually store
- * (e.g. read it from your Supabase session cookie / JWT claim).
- */
 function getIdentifier(req: NextRequest): string {
   const userId = req.cookies.get("sb-user-id")?.value;
   if (userId) return `user:${userId}`;
@@ -48,40 +39,56 @@ function pickLimiter(pathname: string) {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const identifier = getIdentifier(req);
-  const limiter = pickLimiter(pathname);
 
-  const { success, limit, remaining, reset } = await limiter.limit(identifier);
-
-  if (!success) {
-    return new NextResponse(
-      JSON.stringify({
-        error: "Too many requests. Please slow down and try again shortly.",
-      }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/json",
-          "X-RateLimit-Limit": limit.toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-          "X-RateLimit-Reset": reset.toString(),
-          "Retry-After": Math.max(
-            0,
-            Math.ceil((reset - Date.now()) / 1000)
-          ).toString(),
-        },
-      }
-    );
+  // Never block admin APIs, image uploads, or webhooks
+  if (
+    pathname.startsWith("/api/upload") ||
+    pathname.startsWith("/api/admin") ||
+    pathname.startsWith("/api/webhooks")
+  ) {
+    return NextResponse.next();
   }
 
-  const res = NextResponse.next();
-  res.headers.set("X-RateLimit-Limit", limit.toString());
-  res.headers.set("X-RateLimit-Remaining", remaining.toString());
-  res.headers.set("X-RateLimit-Reset", reset.toString());
-  return res;
+  try {
+    const identifier = getIdentifier(req);
+    const limiter = pickLimiter(pathname);
+
+    const { success, limit, remaining, reset } = await limiter.limit(identifier);
+
+    if (!success) {
+      return new NextResponse(
+        JSON.stringify({
+          error: "Too many requests. Please slow down and try again shortly.",
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+            "X-RateLimit-Reset": reset.toString(),
+            "Retry-After": Math.max(
+              0,
+              Math.ceil((reset - Date.now()) / 1000)
+            ).toString(),
+          },
+        }
+      );
+    }
+
+    const res = NextResponse.next();
+    res.headers.set("X-RateLimit-Limit", limit.toString());
+    res.headers.set("X-RateLimit-Remaining", remaining.toString());
+    res.headers.set("X-RateLimit-Reset", reset.toString());
+    return res;
+  } catch (err) {
+    // Fail-open: Never bring down APIs if rate limiter encounters a network or Edge runtime error
+    console.error("[middleware] Rate limit check skipped:", err);
+    return NextResponse.next();
+  }
 }
 
-// Only run this middleware on API routes — keep pages fast and un-throttled.
+// Only run this middleware on API routes
 export const config = {
   matcher: ["/api/:path*"],
 };
