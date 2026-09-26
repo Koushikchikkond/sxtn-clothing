@@ -1,7 +1,8 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getHeroBanner } from "@/lib/hero-banner";
 import type { Product, ProductImage } from "@/types/database.types";
 
 type ProductWithCover = Product & { product_images: ProductImage[] };
@@ -9,34 +10,52 @@ type ProductWithCover = Product & { product_images: ProductImage[] };
 export default async function Home() {
   const supabase = await createClient();
 
-  const { data: productsRaw } = await supabase
-    .from("products")
-    .select(`
-      id, name, slug, price, compare_at_price,
-      product_images ( id, url, position )
-    `)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
-    .limit(8);
+  const [productsRes, heroBanner] = await Promise.all([
+    supabase
+      .from("products")
+      .select(`
+        id, name, slug, price, compare_at_price,
+        product_images ( id, url, position )
+      `)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(8),
+    getHeroBanner(),
+  ]);
 
-  const products = (productsRaw as unknown as ProductWithCover[]) ?? [];
+  const products = (productsRes.data as unknown as ProductWithCover[]) ?? [];
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
       {/* ─── Hero Section ────────────────────────────────────────── */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=3000&auto=format&fit=crop"
-            alt="SXTN Hero"
-            fill
-            className="object-cover opacity-50"
-            priority
-          />
+          {/* Desktop/Tablet Screen View */}
+          <div className="hidden md:block absolute inset-0">
+            <Image
+              src={heroBanner.desktop_url}
+              alt={heroBanner.alt_text || "SXTN Hero"}
+              fill
+              className="object-cover opacity-60"
+              priority
+              sizes="100vw"
+            />
+          </div>
+
+          {/* Mobile Screen View */}
+          <div className="block md:hidden absolute inset-0">
+            <Image
+              src={heroBanner.mobile_url}
+              alt={heroBanner.alt_text || "SXTN Hero"}
+              fill
+              className="object-cover opacity-60"
+              priority
+              sizes="100vw"
+            />
+          </div>
+
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black" />
         </div>
-
-
       </section>
 
 
@@ -101,15 +120,15 @@ export default async function Home() {
                     )}
                   </div>
                   <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
-                    <h3 className="font-display font-bold tracking-tight uppercase text-base sm:text-lg md:text-xl text-white leading-snug">
+                    <h3 className="font-display font-bold tracking-tight uppercase text-sm sm:text-base md:text-base text-white leading-snug">
                       {product.name}
                     </h3>
-                    <div className="flex items-center gap-2.5 mt-1">
-                      <p className="font-display font-bold tracking-tight text-base sm:text-lg md:text-xl text-white">
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="font-display font-bold tracking-tight text-sm sm:text-base md:text-base text-white">
                         INR {product.price.toLocaleString("en-IN")}
                       </p>
                       {product.compare_at_price && (
-                        <p className="text-xs sm:text-sm text-white/40 line-through">
+                        <p className="text-xs text-white/40 line-through">
                           INR {product.compare_at_price.toLocaleString("en-IN")}
                         </p>
                       )}

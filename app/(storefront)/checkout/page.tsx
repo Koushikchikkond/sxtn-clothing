@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/lib/stores/cart.store";
 import { Loader2 } from "lucide-react";
@@ -39,9 +39,14 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect if cart empty
+  // Redirect if cart empty (in useEffect so it only runs on the client)
+  useEffect(() => {
+    if (items.length === 0) {
+      router.replace("/cart");
+    }
+  }, [items.length, router]);
+
   if (items.length === 0) {
-    router.replace("/cart");
     return null;
   }
 

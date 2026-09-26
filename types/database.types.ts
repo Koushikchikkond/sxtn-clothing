@@ -278,6 +278,24 @@ export type Database = {
         };
         Update: Record<string, never>;
       };
+
+      site_settings: {
+        Row: {
+          key:        string;
+          value:      Json;
+          updated_at: string;
+        };
+        Insert: {
+          key:         string;
+          value:       Json;
+          updated_at?: string;
+        };
+        Update: {
+          value?:      Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
 
     Views: Record<string, never>;
