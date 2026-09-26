@@ -123,28 +123,31 @@ export default function AdminHeroBannerPage() {
         body: formData,
       });
 
+      const rawText = await res.text();
+      let data: { url?: string; error?: string } | null = null;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        // Response was not JSON
+      }
+
       if (!res.ok) {
         let errorMsg = `Upload failed (${res.status})`;
-        try {
-          const errData = await res.json();
-          errorMsg = errData.error || errorMsg;
-        } catch {
-          const rawText = await res.text();
-          if (rawText.includes("A server error has occurred") || rawText.includes("500") || rawText.includes("504")) {
+        if (data && data.error) {
+          errorMsg = data.error;
+        } else if (rawText) {
+          if (rawText.includes("A server error has occurred")) {
             errorMsg =
-              "Cloudflare R2 is not configured on the live server. Please add your Cloudflare R2 environment variables to Vercel Project Settings, or paste a direct image URL in the field below.";
-          } else if (rawText) {
-            errorMsg = rawText.slice(0, 200);
+              "Cloudflare R2 is not configured on your live deployment. Please add your Cloudflare R2 environment variables to Vercel Project Settings → Environment Variables, or enter a direct image URL below.";
+          } else {
+            errorMsg = rawText.slice(0, 300);
           }
         }
         throw new Error(errorMsg);
       }
 
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        throw new Error("Invalid server response. Please check your storage settings or paste a direct image URL.");
+      if (!data || !data.url) {
+        throw new Error("Server did not return a valid image URL. Please check your storage settings or paste a direct image URL.");
       }
 
       const uploadedUrl = data.url;
@@ -189,14 +192,20 @@ export default function AdminHeroBannerPage() {
         body: JSON.stringify(banner),
       });
 
+      const rawText = await res.text();
+      let data: { error?: string } | null = null;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        // Not JSON
+      }
+
       if (!res.ok) {
         let errorMsg = `Save failed (${res.status})`;
-        try {
-          const errData = await res.json();
-          errorMsg = errData.error || errorMsg;
-        } catch {
-          const rawText = await res.text();
-          if (rawText) errorMsg = rawText.slice(0, 200);
+        if (data && data.error) {
+          errorMsg = data.error;
+        } else if (rawText) {
+          errorMsg = rawText.slice(0, 300);
         }
         throw new Error(errorMsg);
       }

@@ -13,6 +13,57 @@ export function ImageUpload({ value, onChange, productSlug }: ImageUploadProps) 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const optimizeImage = async (file: File): Promise<File> => {
+    // If file is already under 2MB, don't re-compress
+    if (file.size <= 2 * 1024 * 1024) return file;
+
+    return new Promise((resolve) => {
+      const img = document.createElement("img");
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const maxDimension = 2000;
+        let { width, height } = img;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(file);
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            const safeName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+            resolve(new File([blob], safeName, { type: "image/webp" }));
+          },
+          "image/webp",
+          0.88
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -23,27 +74,38 @@ export function ImageUpload({ value, onChange, productSlug }: ImageUploadProps) 
 
     try {
       for (const file of Array.from(files)) {
+        const readyFile = await optimizeImage(file);
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", readyFile);
         if (productSlug) formData.append("productSlug", productSlug);
 
         const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const rawText = await res.text();
+        let data: { url?: string; error?: string } | null = null;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          // Response was not JSON
+        }
+
         if (!res.ok) {
           let errorMsg = `Upload failed (${res.status})`;
-          try {
-            const data = await res.json();
-            errorMsg = data.error || errorMsg;
-          } catch {
-            const text = await res.text();
-            if (text.includes("A server error has occurred")) {
-              errorMsg = "Cloudflare R2 is not configured on the live server. Please verify your Vercel Environment Variables.";
-            } else if (text) {
-              errorMsg = text.slice(0, 200);
+          if (data && data.error) {
+            errorMsg = data.error;
+          } else if (rawText) {
+            if (rawText.includes("A server error has occurred")) {
+              errorMsg =
+                "Cloudflare R2 is not configured on your live deployment. Please add your Cloudflare R2 environment variables to Vercel Project Settings → Environment Variables.";
+            } else {
+              errorMsg = rawText.slice(0, 300);
             }
           }
           throw new Error(errorMsg);
         }
-        const data = await res.json();
+
+        if (!data || !data.url) {
+          throw new Error("Server did not return a valid image URL.");
+        }
         newUrls.push(data.url);
       }
       onChange([...value, ...newUrls]);
