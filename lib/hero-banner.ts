@@ -78,10 +78,10 @@ export async function saveHeroBanner(
   // 1. Save to Supabase site_settings
   try {
     const supabase = createAdminClient();
-    const { error } = await (supabase.from("site_settings") as any).upsert(
+    const { error } = await supabase.from("site_settings").upsert(
       {
         key: "hero_banner",
-        value: payload,
+        value: payload as any,
         updated_at: payload.updated_at,
       },
       { onConflict: "key" }
