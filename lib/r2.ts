@@ -1,22 +1,33 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-if (!process.env.CLOUDFLARE_ACCOUNT_ID) throw new Error("Missing CLOUDFLARE_ACCOUNT_ID");
-if (!process.env.R2_ACCESS_KEY_ID) throw new Error("Missing R2_ACCESS_KEY_ID");
-if (!process.env.R2_SECRET_ACCESS_KEY) throw new Error("Missing R2_SECRET_ACCESS_KEY");
-if (!process.env.R2_BUCKET_NAME) throw new Error("Missing R2_BUCKET_NAME");
+function getR2Config() {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_BUCKET_NAME;
 
-export const r2 = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId:     process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-});
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    throw new Error(
+      "Cloudflare R2 is not configured on the server. Please add CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, and R2_PUBLIC_URL to your Vercel (or hosting) Environment Variables."
+    );
+  }
 
-export const BUCKET = process.env.R2_BUCKET_NAME;
-export const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL ?? "";
+  const client = new S3Client({
+    region: "auto",
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+
+  return {
+    client,
+    bucket,
+    publicUrl: (process.env.R2_PUBLIC_URL ?? "").replace(/\/+$/, ""),
+  };
+}
 
 /** Upload a file buffer directly to R2 */
 export async function uploadToR2(
@@ -24,21 +35,23 @@ export async function uploadToR2(
   body: Buffer | Uint8Array,
   contentType: string
 ): Promise<string> {
-  await r2.send(
+  const { client, bucket, publicUrl } = getR2Config();
+  await client.send(
     new PutObjectCommand({
-      Bucket: BUCKET,
+      Bucket: bucket,
       Key: key,
       Body: body,
       ContentType: contentType,
       CacheControl: "public, max-age=31536000, immutable",
     })
   );
-  return `${R2_PUBLIC_URL}/${key}`;
+  return `${publicUrl}/${key}`;
 }
 
 /** Delete a file from R2 by key */
 export async function deleteFromR2(key: string): Promise<void> {
-  await r2.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+  const { client, bucket } = getR2Config();
+  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 
 /** Generate a short-lived presigned URL for client-side direct upload */
@@ -47,9 +60,10 @@ export async function getUploadPresignedUrl(
   contentType: string,
   expiresIn = 300 // 5 minutes
 ): Promise<string> {
+  const { client, bucket } = getR2Config();
   return getSignedUrl(
-    r2,
-    new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }),
+    client,
+    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
     { expiresIn }
   );
 }

@@ -29,15 +29,27 @@ export function ImageUpload({ value, onChange, productSlug }: ImageUploadProps) 
 
         const res = await fetch("/api/upload", { method: "POST", body: formData });
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Upload failed");
+          let errorMsg = `Upload failed (${res.status})`;
+          try {
+            const data = await res.json();
+            errorMsg = data.error || errorMsg;
+          } catch {
+            const text = await res.text();
+            if (text.includes("A server error has occurred")) {
+              errorMsg = "Cloudflare R2 is not configured on the live server. Please verify your Vercel Environment Variables.";
+            } else if (text) {
+              errorMsg = text.slice(0, 200);
+            }
+          }
+          throw new Error(errorMsg);
         }
         const data = await res.json();
         newUrls.push(data.url);
       }
       onChange([...value, ...newUrls]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      setError(message);
     } finally {
       setIsUploading(false);
       e.target.value = "";

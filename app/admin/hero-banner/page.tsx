@@ -43,6 +43,58 @@ export default function AdminHeroBannerPage() {
     loadBanner();
   }, []);
 
+  // Client-side image optimization (resizes large camera/RAW images to avoid Vercel 4.5MB payload limit)
+  const optimizeImageForUpload = async (file: File, maxDimension: number): Promise<File> => {
+    // If file is already small (under 2MB), upload directly
+    if (file.size <= 2 * 1024 * 1024) return file;
+
+    return new Promise((resolve) => {
+      const img = document.createElement("img");
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        let { width, height } = img;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(file);
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            const safeName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+            const optimized = new File([blob], safeName, { type: "image/webp" });
+            resolve(optimized);
+          },
+          "image/webp",
+          0.88
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
   // Upload handler for Cloudflare R2
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -59,8 +111,11 @@ export default function AdminHeroBannerPage() {
     setFeedback(null);
 
     try {
+      // 1. Optimize large files client-side before sending
+      const readyFile = await optimizeImageForUpload(file, isDesktop ? 2560 : 1920);
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", readyFile);
       formData.append("productSlug", "hero-banner");
 
       const res = await fetch("/api/upload", {
@@ -69,11 +124,29 @@ export default function AdminHeroBannerPage() {
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Image upload failed");
+        let errorMsg = `Upload failed (${res.status})`;
+        try {
+          const errData = await res.json();
+          errorMsg = errData.error || errorMsg;
+        } catch {
+          const rawText = await res.text();
+          if (rawText.includes("A server error has occurred") || rawText.includes("500") || rawText.includes("504")) {
+            errorMsg =
+              "Cloudflare R2 is not configured on the live server. Please add your Cloudflare R2 environment variables to Vercel Project Settings, or paste a direct image URL in the field below.";
+          } else if (rawText) {
+            errorMsg = rawText.slice(0, 200);
+          }
+        }
+        throw new Error(errorMsg);
       }
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Invalid server response. Please check your storage settings or paste a direct image URL.");
+      }
+
       const uploadedUrl = data.url;
 
       setBanner((prev) => ({
@@ -85,8 +158,9 @@ export default function AdminHeroBannerPage() {
         type: "success",
         msg: `${isDesktop ? "Desktop" : "Mobile"} image uploaded! Click "Save Changes" below to apply.`,
       });
-    } catch (err: any) {
-      setFeedback({ type: "error", msg: err.message || "Failed to upload image" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to upload image";
+      setFeedback({ type: "error", msg: message });
     } finally {
       if (isDesktop) setUploadingDesktop(false);
       else setUploadingMobile(false);
@@ -115,17 +189,25 @@ export default function AdminHeroBannerPage() {
         body: JSON.stringify(banner),
       });
 
-      const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to save hero banner");
+        let errorMsg = `Save failed (${res.status})`;
+        try {
+          const errData = await res.json();
+          errorMsg = errData.error || errorMsg;
+        } catch {
+          const rawText = await res.text();
+          if (rawText) errorMsg = rawText.slice(0, 200);
+        }
+        throw new Error(errorMsg);
       }
 
       setFeedback({
         type: "success",
         msg: "✓ Front page hero banner updated successfully! Live on homepage.",
       });
-    } catch (err: any) {
-      setFeedback({ type: "error", msg: err.message || "Error saving changes" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Error saving changes";
+      setFeedback({ type: "error", msg: message });
     } finally {
       setSaving(false);
     }
