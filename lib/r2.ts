@@ -1,15 +1,27 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+function cleanEnv(val: string | undefined): string {
+  if (!val) return "";
+  return val.trim().replace(/^["']|["']$/g, "");
+}
+
 function getR2Config() {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET_NAME;
+  const accountId = cleanEnv(process.env.CLOUDFLARE_ACCOUNT_ID);
+  const accessKeyId = cleanEnv(process.env.R2_ACCESS_KEY_ID);
+  const secretAccessKey = cleanEnv(process.env.R2_SECRET_ACCESS_KEY);
+  const bucket = cleanEnv(process.env.R2_BUCKET_NAME);
+  const publicUrl = cleanEnv(process.env.R2_PUBLIC_URL).replace(/\/+$/, "");
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    const missing: string[] = [];
+    if (!accountId) missing.push("CLOUDFLARE_ACCOUNT_ID");
+    if (!accessKeyId) missing.push("R2_ACCESS_KEY_ID");
+    if (!secretAccessKey) missing.push("R2_SECRET_ACCESS_KEY");
+    if (!bucket) missing.push("R2_BUCKET_NAME");
+
     throw new Error(
-      "Cloudflare R2 is not configured on the server. Please add CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, and R2_PUBLIC_URL to your Vercel (or hosting) Environment Variables."
+      `Cloudflare R2 is not fully configured. Missing variables in Vercel: ${missing.join(", ")}. Please add them in Vercel Settings and Redeploy.`
     );
   }
 
@@ -25,7 +37,7 @@ function getR2Config() {
   return {
     client,
     bucket,
-    publicUrl: (process.env.R2_PUBLIC_URL ?? "").replace(/\/+$/, ""),
+    publicUrl,
   };
 }
 
