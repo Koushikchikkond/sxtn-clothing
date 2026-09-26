@@ -38,11 +38,10 @@ function parseConfig(raw: unknown): HeroBannerConfig | null {
 }
 
 // ── Read ───────────────────────────────────────────────────────────
-export async function getHeroBanner(): Promise<HeroBannerConfig> {
+export async function getHeroBanner(client?: any): Promise<HeroBannerConfig> {
   // 1. Supabase site_settings (source of truth)
   try {
-    const supabase = createAdminClient();
-    // Using any-cast to avoid PostgREST query-builder schema-matching issues with custom tables
+    const supabase = client || createAdminClient();
     const { data, error } = await (supabase as any)
       .from("site_settings")
       .select("value")
@@ -59,11 +58,10 @@ export async function getHeroBanner(): Promise<HeroBannerConfig> {
 
   // 2. Upstash Redis cache (fast-path)
   try {
-    if (
-      process.env.UPSTASH_REDIS_REST_URL &&
-      process.env.UPSTASH_REDIS_REST_TOKEN
-    ) {
-      const redis = Redis.fromEnv();
+    const url = process.env.UPSTASH_REDIS_REST_URL?.trim().replace(/^["']|["']$/g, "");
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim().replace(/^["']|["']$/g, "");
+    if (url && token) {
+      const redis = new Redis({ url, token });
       const cached = await redis.get<unknown>("sxtn:hero_banner");
       const parsed = parseConfig(cached);
       if (parsed) return parsed;
@@ -78,17 +76,20 @@ export async function getHeroBanner(): Promise<HeroBannerConfig> {
 
 // ── Write ──────────────────────────────────────────────────────────
 export async function saveHeroBanner(
-  config: Omit<HeroBannerConfig, "updated_at">
+  config: Omit<HeroBannerConfig, "updated_at">,
+  client?: any
 ): Promise<{ success: boolean; error?: string }> {
   const payload: HeroBannerConfig = {
     ...config,
     updated_at: new Date().toISOString(),
   };
-  let savedAnywhere = false;
 
-  // 1. Supabase upsert
+  let dbSaved = false;
+  let dbError = "";
+
+  // 1. Supabase upsert (prefer authenticated admin client if passed)
   try {
-    const supabase = createAdminClient();
+    const supabase = client || createAdminClient();
     const { error } = await (supabase as any).from("site_settings").upsert(
       {
         key: "hero_banner",
@@ -97,30 +98,40 @@ export async function saveHeroBanner(
       },
       { onConflict: "key" }
     );
-    if (!error) savedAnywhere = true;
-  } catch {
-    // Ignore — maybe table missing
-  }
 
-  // 2. Redis cache
-  try {
-    if (
-      process.env.UPSTASH_REDIS_REST_URL &&
-      process.env.UPSTASH_REDIS_REST_TOKEN
-    ) {
-      const redis = Redis.fromEnv();
-      await redis.set("sxtn:hero_banner", payload);
-      savedAnywhere = true;
+    if (error) {
+      dbError = error.message || JSON.stringify(error);
+      console.error("[saveHeroBanner] Supabase upsert error:", dbError);
+    } else {
+      dbSaved = true;
     }
-  } catch {
-    // Ignore
+  } catch (err: unknown) {
+    dbError = err instanceof Error ? err.message : String(err);
+    console.error("[saveHeroBanner] Supabase exception:", dbError);
   }
 
-  return savedAnywhere
-    ? { success: true }
-    : {
-        success: false,
-        error:
-          "Could not save — ensure the site_settings table exists in Supabase.",
-      };
+  // 2. Redis cache write
+  let redisSaved = false;
+  try {
+    const url = process.env.UPSTASH_REDIS_REST_URL?.trim().replace(/^["']|["']$/g, "");
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim().replace(/^["']|["']$/g, "");
+    if (url && token) {
+      const redis = new Redis({ url, token });
+      await redis.set("sxtn:hero_banner", payload);
+      redisSaved = true;
+    }
+  } catch (redisErr) {
+    console.warn("[saveHeroBanner] Redis write warning:", redisErr);
+  }
+
+  if (dbSaved || redisSaved) {
+    return { success: true };
+  }
+
+  return {
+    success: false,
+    error: dbError
+      ? `Database error: ${dbError}`
+      : "Could not save to database or cache. Please check Supabase permissions.",
+  };
 }

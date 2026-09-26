@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroBanner, saveHeroBanner } from "@/lib/hero-banner";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
-    const banner = await getHeroBanner();
+    const supabase = await createClient();
+    const banner = await getHeroBanner(supabase);
     return NextResponse.json({ banner });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to load hero banner";
@@ -45,11 +48,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await saveHeroBanner({
-      desktop_url,
-      mobile_url,
-      alt_text: alt_text || "SXTN Hero",
-    });
+    const result = await saveHeroBanner(
+      {
+        desktop_url,
+        mobile_url,
+        alt_text: alt_text || "SXTN Hero",
+      },
+      supabase
+    );
 
     if (!result.success) {
       return NextResponse.json({ error: result.error || "Save failed" }, { status: 500 });

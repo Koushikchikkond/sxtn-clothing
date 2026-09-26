@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they already exist (avoids 42710 error on re-run)
+DROP POLICY IF EXISTS "Allow public read site_settings" ON public.site_settings;
+DROP POLICY IF EXISTS "Allow admin write site_settings" ON public.site_settings;
+
 -- Allow anyone (public/customers) to read site settings
 CREATE POLICY "Allow public read site_settings"
   ON public.site_settings
