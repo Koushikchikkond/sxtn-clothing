@@ -76,16 +76,22 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        if (existingOrder) {
+        const order = existingOrder as {
+          id: string;
+          status: string;
+          razorpay_payment_id: string | null;
+        } | null;
+
+        if (order) {
           // If not already marked as paid, update it
-          if (existingOrder.status !== "paid") {
+          if (order.status !== "paid") {
             const { error: updateError } = await supabase
               .from("orders")
               .update({
                 status: "paid",
-                razorpay_payment_id: paymentId || existingOrder.razorpay_payment_id,
-              })
-              .eq("id", existingOrder.id);
+                razorpay_payment_id: paymentId || order.razorpay_payment_id,
+              } as any)
+              .eq("id", order.id);
 
             if (updateError) {
               console.error(
@@ -94,12 +100,12 @@ export async function POST(req: NextRequest) {
               );
             } else {
               console.log(
-                `[Razorpay Webhook] Order ${existingOrder.id} marked as paid via webhook`
+                `[Razorpay Webhook] Order ${order.id} marked as paid via webhook`
               );
             }
           } else {
             console.log(
-              `[Razorpay Webhook] Order ${existingOrder.id} was already marked as paid`
+              `[Razorpay Webhook] Order ${order.id} was already marked as paid`
             );
           }
         }
