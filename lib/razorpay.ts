@@ -24,15 +24,21 @@ export interface VerifyPaymentParams {
   razorpay_signature: string;
 }
 
+function clean(val: string | undefined): string {
+  if (!val) return "";
+  return val.trim().replace(/^["']|["']$/g, "").replace(/[\r\n]/g, "");
+}
+
 /**
  * Returns server-side Razorpay credentials securely.
  * KEY_SECRET is NEVER returned to client side.
  */
 export function getRazorpayCredentials() {
-  const keyId =
+  const keyId = clean(
     process.env.RAZORPAY_KEY_ID ||
-    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+  );
+  const keySecret = clean(process.env.RAZORPAY_KEY_SECRET);
 
   if (!keyId || !keySecret) {
     throw new Error(
@@ -78,7 +84,12 @@ export async function createRazorpayOrder({
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    console.error("[Razorpay API] Order creation error:", errorBody);
+    console.error("[Razorpay API] Order creation error:", {
+      status: response.status,
+      keyIdPreview: `${keyId.substring(0, 8)}... (len: ${keyId.length})`,
+      secretLength: keySecret.length,
+      errorBody,
+    });
     const errorMsg =
       errorBody?.error?.description ||
       `Razorpay order creation failed with status ${response.status}`;
