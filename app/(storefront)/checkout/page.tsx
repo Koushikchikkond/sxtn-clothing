@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { useCartStore } from "@/lib/stores/cart.store";
 import { Loader2 } from "lucide-react";
 
@@ -86,19 +87,24 @@ export default function CheckoutPage() {
         throw new Error(data.error || "Failed to create order");
       }
 
-      const { orderId, amount, currency, keyId } = await res.json();
+      const orderData = await res.json();
+      const activeOrderId = orderData.order_id || orderData.orderId;
+      const activeKeyId =
+        orderData.key_id ||
+        orderData.keyId ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
-      // 2. Load Razorpay script and open checkout
+      // 2. Load Razorpay script and open checkout modal
       if (!(window as Window & { Razorpay?: unknown }).Razorpay) {
         await loadRazorpayScript();
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rzp = new (window as any).Razorpay({
-        key: keyId,
-        amount,
-        currency,
-        order_id: orderId,
+        key: activeKeyId,
+        amount: orderData.amount,
+        currency: orderData.currency || "INR",
+        order_id: activeOrderId,
         name: "SXTN",
         description: `Order — ${items.length} item${items.length > 1 ? "s" : ""}`,
         prefill: {
@@ -111,40 +117,61 @@ export default function CheckoutPage() {
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
-          // 3. Verify payment on server
-          const verifyRes = await fetch("/api/checkout/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              items: items.map((i) => ({
-                variantId: i.variantId,
-                name: i.name,
-                size: i.size,
-                color: i.color,
-                price: i.price,
-                quantity: i.quantity,
-              })),
-              subtotal,
-              shippingFee,
-              total,
-              address: form,
-            }),
-          });
+          try {
+            // 3. Verify payment signature on server
+            const verifyRes = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                items: items.map((i) => ({
+                  variantId: i.variantId,
+                  name: i.name,
+                  size: i.size,
+                  color: i.color,
+                  price: i.price,
+                  quantity: i.quantity,
+                })),
+                address: form,
+              }),
+            });
 
-          if (verifyRes.ok) {
-            clearCart();
-            router.push("/order-success");
-          } else {
-            setError("Payment verification failed. Please contact support.");
+            const verifyData = await verifyRes.json().catch(() => ({}));
+
+            if (verifyRes.ok && verifyData.success) {
+              clearCart();
+              router.push("/order-success");
+            } else {
+              setError(
+                verifyData.error ||
+                  "Payment signature verification failed. Please contact support."
+              );
+              setLoading(false);
+            }
+          } catch (verifyErr) {
+            console.error("Verification error:", verifyErr);
+            setError("Network error while verifying payment. Please contact support.");
             setLoading(false);
           }
         },
         modal: {
-          ondismiss: () => setLoading(false),
+          ondismiss: () => {
+            setLoading(false);
+          },
         },
+      });
+
+      // Handle payment failure event
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rzp.on("payment.failed", (failedRes: any) => {
+        console.error("Razorpay payment failed:", failedRes);
+        setError(
+          failedRes?.error?.description ||
+            "Payment failed or was declined. Please try again or use another payment method."
+        );
+        setLoading(false);
       });
 
       rzp.open();
@@ -156,8 +183,11 @@ export default function CheckoutPage() {
 
   return (
     <>
-      {/* Razorpay script */}
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async />
+      {/* Razorpay standard checkout script */}
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+      />
 
       <div className="min-h-screen pt-28 pb-32 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <h1 className="font-display text-4xl sm:text-5xl uppercase tracking-widest mb-12">

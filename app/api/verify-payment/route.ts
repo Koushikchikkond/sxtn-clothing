@@ -1,0 +1,126 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  verifyRazorpaySignature,
+  calculateVerifiedCartTotal,
+} from "@/lib/razorpay";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { TablesInsert } from "@/types/database.types";
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      items,
+      address,
+    } = body;
+
+    // Validate required Razorpay signature fields
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return NextResponse.json(
+        {
+          error: "Missing required fields: razorpay_order_id, razorpay_payment_id, and razorpay_signature are required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verify HMAC-SHA256 signature
+    const isValid = verifyRazorpaySignature({
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    });
+
+    if (!isValid) {
+      return NextResponse.json(
+        { error: "Invalid payment signature. Payment could not be verified." },
+        { status: 400 }
+      );
+    }
+
+    // If order was created from storefront with items and address, persist to database
+    if (items && Array.isArray(items) && items.length > 0) {
+      try {
+        const verified = await calculateVerifiedCartTotal(items);
+        const supabase = await createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        const adminDb = createAdminClient();
+
+        const orderPayload: TablesInsert<"orders"> = {
+          user_id: user?.id ?? null,
+          status: "paid",
+          subtotal: verified.subtotal,
+          shipping_fee: verified.shippingFee,
+          total: verified.total,
+          razorpay_order_id,
+          razorpay_payment_id,
+          shipping_address: address || null,
+        };
+
+        const { data: order, error: orderError } = await adminDb
+          .from("orders")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .insert(orderPayload as any)
+          .select("id")
+          .single();
+
+        if (orderError || !order) {
+          console.error("[POST /api/verify-payment] Order insert failed:", orderError);
+          return NextResponse.json(
+            { error: "Payment verified, but failed to save order to database." },
+            { status: 500 }
+          );
+        }
+
+        const orderItems: TablesInsert<"order_items">[] = verified.items.map(
+          (item) => ({
+            order_id: (order as { id: string }).id,
+            variant_id: item.variantId,
+            product_name: item.name,
+            size: item.size,
+            color: item.color,
+            unit_price: item.price,
+            quantity: item.quantity,
+          })
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await adminDb.from("order_items").insert(orderItems as any);
+
+        return NextResponse.json({
+          success: true,
+          message: "Payment verified and order created successfully.",
+          orderId: (order as { id: string }).id,
+        });
+      } catch (dbErr) {
+        console.error("[POST /api/verify-payment] Database save error:", dbErr);
+        return NextResponse.json(
+          {
+            success: true,
+            warning: "Payment verified, but database persistence encountered an issue.",
+          },
+          { status: 200 }
+        );
+      }
+    }
+
+    // Standard verification response
+    return NextResponse.json({
+      success: true,
+      message: "Payment verified successfully",
+    });
+  } catch (err: unknown) {
+    console.error("[POST /api/verify-payment] Error:", err);
+    return NextResponse.json(
+      { error: "Payment verification failed" },
+      { status: 500 }
+    );
+  }
+}

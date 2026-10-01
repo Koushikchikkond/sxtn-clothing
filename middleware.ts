@@ -29,7 +29,9 @@ function pickLimiter(pathname: string) {
   if (
     pathname.startsWith("/api/checkout") ||
     pathname.startsWith("/api/order") ||
-    pathname.startsWith("/api/payment")
+    pathname.startsWith("/api/payment") ||
+    pathname.startsWith("/api/create-order") ||
+    pathname.startsWith("/api/verify-payment")
   ) {
     return checkoutRateLimit;
   }
