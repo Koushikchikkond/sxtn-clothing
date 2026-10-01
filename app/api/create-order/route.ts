@@ -5,6 +5,8 @@ import {
   getRazorpayCredentials,
 } from "@/lib/razorpay";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     let credentials;

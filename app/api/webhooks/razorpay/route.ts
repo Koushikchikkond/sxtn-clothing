@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
