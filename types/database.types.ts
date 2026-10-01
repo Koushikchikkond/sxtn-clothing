@@ -33,6 +33,7 @@ export type Database = {
           role?:       "customer" | "admin";
           updated_at?: string;
         };
+        Relationships: [];
       };
 
       categories: {
@@ -58,6 +59,7 @@ export type Database = {
           image_url?: string | null;
           position?:  number;
         };
+        Relationships: [];
       };
 
       products: {
@@ -104,6 +106,7 @@ export type Database = {
           wash_care?:        string[] | null;
           updated_at?:       string;
         };
+        Relationships: [];
       };
 
       product_images: {
@@ -126,6 +129,7 @@ export type Database = {
           alt_text?: string | null;
           position?: number;
         };
+        Relationships: [];
       };
 
       product_variants: {
@@ -154,6 +158,7 @@ export type Database = {
           stock?:          number;
           price_override?: number | null;
         };
+        Relationships: [];
       };
 
       addresses: {
@@ -193,6 +198,7 @@ export type Database = {
           pincode?:    string;
           is_default?: boolean;
         };
+        Relationships: [];
       };
 
       orders: {
@@ -236,6 +242,7 @@ export type Database = {
           notes?:                string | null;
           updated_at?:           string;
         };
+        Relationships: [];
       };
 
       order_items: {
@@ -263,6 +270,7 @@ export type Database = {
           quantity?:  number;
           unit_price?: number;
         };
+        Relationships: [];
       };
 
       wishlists: {
@@ -277,6 +285,7 @@ export type Database = {
           created_at?: string;
         };
         Update: Record<string, never>;
+        Relationships: [];
       };
 
       site_settings: {

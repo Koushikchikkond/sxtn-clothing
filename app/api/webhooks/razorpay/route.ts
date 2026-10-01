@@ -85,12 +85,11 @@ export async function POST(req: NextRequest) {
         if (order) {
           // If not already marked as paid, update it
           if (order.status !== "paid") {
-            const { error: updateError } = await supabase
-              .from("orders")
+            const { error: updateError } = await (supabase.from("orders") as any)
               .update({
                 status: "paid",
                 razorpay_payment_id: paymentId || order.razorpay_payment_id,
-              } as any)
+              })
               .eq("id", order.id);
 
             if (updateError) {
