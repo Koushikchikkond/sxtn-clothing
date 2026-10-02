@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { OrderStatusManager } from "@/components/admin/order-status-manager";
 
 export const metadata = { title: "Order Detail — SXTN Admin" };
 
@@ -47,6 +48,12 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           {(order as any).status}
         </span>
       </div>
+
+      <OrderStatusManager
+        orderId={(order as any).id}
+        initialStatus={(order as any).status}
+        customerEmail={(order as any).guest_email || address?.email}
+      />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
         {/* Shipping Address */}

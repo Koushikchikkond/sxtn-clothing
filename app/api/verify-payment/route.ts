@@ -6,6 +6,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TablesInsert } from "@/types/database.types";
+import { sendOrderConfirmationEmail } from "@/lib/email/resend";
 
 export const runtime = "nodejs";
 
@@ -126,6 +127,29 @@ export async function POST(req: NextRequest) {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await adminDb.from("order_items").insert(orderItems as any);
+
+        // Send Order Confirmation & Payment Receipt Email via Resend
+        const customerEmail = user?.email || address?.email;
+        if (customerEmail) {
+          sendOrderConfirmationEmail({
+            to: customerEmail,
+            orderId: (order as { id: string }).id,
+            total: verified.total,
+            subtotal: verified.subtotal,
+            shippingFee: verified.shippingFee,
+            items: verified.items.map((it) => ({
+              name: it.name,
+              size: it.size,
+              color: it.color,
+              quantity: it.quantity,
+              price: it.price,
+            })),
+            address: address,
+            paymentId: razorpay_payment_id,
+          }).catch((emailErr) => {
+            console.warn("[POST /api/verify-payment] Notice: Email notification skipped/failed:", emailErr);
+          });
+        }
 
         return NextResponse.json({
           success: true,
