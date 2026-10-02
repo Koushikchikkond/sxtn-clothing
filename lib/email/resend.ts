@@ -8,9 +8,13 @@ import {
   EmailAddress,
 } from "./templates";
 
-// Default sender address: Use configured domain or Resend's free test sender
-export const DEFAULT_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL || "SXTN Store <onboarding@resend.dev>";
+export function getFromEmail(): string {
+  const envVal = process.env.RESEND_FROM_EMAIL;
+  if (!envVal) return "SXTN Store <onboarding@resend.dev>";
+  return envVal.trim().replace(/^["']|["']$/g, "");
+}
+
+export const DEFAULT_FROM_EMAIL = getFromEmail();
 
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
@@ -44,7 +48,7 @@ export async function sendOrderConfirmationEmail(params: {
     const shortId = params.orderId.slice(0, 8).toUpperCase();
 
     const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM_EMAIL,
+      from: getFromEmail(),
       to: [params.to],
       subject: `Order #${shortId} Confirmed — SXTN`,
       html,
@@ -96,7 +100,7 @@ export async function sendOrderStatusEmail(params: {
     const subject = subjects[params.status] || `Order #${shortId} Status Update — SXTN`;
 
     const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM_EMAIL,
+      from: getFromEmail(),
       to: [params.to],
       subject,
       html,
@@ -135,7 +139,7 @@ export async function sendPaymentFailedEmail(params: {
     const html = getPaymentFailedHtml(params);
 
     const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM_EMAIL,
+      from: getFromEmail(),
       to: [params.to],
       subject: `Payment Incomplete — SXTN Order`,
       html,
@@ -170,9 +174,10 @@ export async function sendTestEmail(toEmail: string) {
 
   try {
     const html = getTestEmailHtml(toEmail);
+    const fromAddress = getFromEmail();
 
     const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM_EMAIL,
+      from: fromAddress,
       to: [toEmail],
       subject: `SXTN — Resend Connection Test`,
       html,
@@ -182,7 +187,7 @@ export async function sendTestEmail(toEmail: string) {
       return { success: false, error: error.message };
     }
 
-    return { success: true, id: data?.id, from: DEFAULT_FROM_EMAIL, to: toEmail };
+    return { success: true, id: data?.id, from: fromAddress, to: toEmail };
   } catch (err: unknown) {
     return {
       success: false,
