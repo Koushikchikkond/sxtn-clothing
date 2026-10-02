@@ -159,11 +159,18 @@ export default async function OrderDetailPage({
           </h2>
           {address ? (
             <div className="text-white/50 text-sm space-y-1 leading-relaxed">
-              <p className="text-white font-medium">{address.full_name}</p>
+              <p className="text-white font-medium">
+                {address.full_name || address.fullName || "Recipient"}
+              </p>
+              {(address.email || order.guest_email) && (
+                <p className="text-white/60 text-xs">
+                  {address.email || order.guest_email}
+                </p>
+              )}
               <p>{address.line1}</p>
               {address.line2 && <p>{address.line2}</p>}
               <p>
-                {address.city}, {address.state} {address.pincode}
+                {address.city}, {address.state} — {address.pincode}
               </p>
               <p className="pt-1">{address.phone}</p>
             </div>

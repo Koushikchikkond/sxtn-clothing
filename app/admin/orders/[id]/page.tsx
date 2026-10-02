@@ -54,7 +54,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           <h3 style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "10px", color: "#000" }}>Shipping To</h3>
           {address ? (
             <div style={{ fontSize: "0.85rem", color: "#333", lineHeight: 1.6 }}>
-              <p style={{ fontWeight: 700 }}>{address.full_name ?? "—"}</p>
+              <p style={{ fontWeight: 700 }}>{address.full_name ?? address.fullName ?? "—"}</p>
+              {(address.email || (order as any).guest_email) && (
+                <p>✉️ {address.email ?? (order as any).guest_email}</p>
+              )}
               <p>{address.line1}{address.line2 ? `, ${address.line2}` : ""}</p>
               <p>{address.city}, {address.state} — {address.pincode}</p>
               {address.phone && <p>📞 {address.phone}</p>}

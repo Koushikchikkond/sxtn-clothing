@@ -55,8 +55,39 @@ export async function POST(req: NextRequest) {
 
         const adminDb = createAdminClient();
 
+        let linkedAddressId = address?.addressId || null;
+
+        // If user is authenticated and wants this address saved to profile (and doesn't already have it linked)
+        if (user && address && !linkedAddressId && address.saveAddress !== false) {
+          try {
+            const { data: savedAddr } = await adminDb
+              .from("addresses")
+              .insert({
+                user_id: user.id,
+                full_name: address.fullName || address.full_name || "",
+                phone: address.phone || "",
+                line1: address.line1 || "",
+                line2: address.line2 || null,
+                city: address.city || "",
+                state: address.state || "",
+                pincode: address.pincode || "",
+                is_default: false,
+              } as any)
+              .select("id")
+              .maybeSingle();
+
+            if (savedAddr && (savedAddr as any).id) {
+              linkedAddressId = (savedAddr as any).id;
+            }
+          } catch (addrErr) {
+            console.warn("[POST /api/verify-payment] Notice: Could not auto-save address to addresses table:", addrErr);
+          }
+        }
+
         const orderPayload: TablesInsert<"orders"> = {
           user_id: user?.id ?? null,
+          guest_email: user?.email ?? address?.email ?? null,
+          address_id: linkedAddressId,
           status: "paid",
           subtotal: verified.subtotal,
           shipping_fee: verified.shippingFee,
