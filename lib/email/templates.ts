@@ -23,7 +23,7 @@ export interface EmailAddress {
 }
 
 const BRAND_NAME = "SXTN";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sxtnclothing.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://6xtn.in";
 
 const baseEmailWrapper = (title: string, content: string) => `
 <!DOCTYPE html>
@@ -475,35 +475,4 @@ export function getPaymentFailedHtml(params: {
   `;
 
   return baseEmailWrapper("Payment Incomplete — SXTN", content);
-}
-
-/**
- * 4. Test Email Template
- */
-export function getTestEmailHtml(email: string): string {
-  const content = `
-    <div style="text-align: center; margin-bottom: 20px;">
-      <span style="display: inline-block; background: #052e16; color: #4ade80; font-size: 10px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px;">
-        API Connected
-      </span>
-    </div>
-
-    <h2 class="heading" style="text-align: center;">Resend is Working!</h2>
-    <p class="lead" style="text-align: center;">
-      This is a test notification confirming that your <strong>RESEND_API_KEY</strong> is fully functional and ready to send transactional emails for <strong>SXTN</strong>.
-    </p>
-
-    <div style="background: #141414; border: 1px solid #222222; padding: 16px 20px; margin-bottom: 24px;">
-      <div class="label">Recipient Verified</div>
-      <div class="value" style="font-size: 13px;">${email}</div>
-      <div class="label" style="margin-top: 12px;">Timestamp</div>
-      <div class="value" style="font-size: 12px; color: #888;">${new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</div>
-    </div>
-
-    <p style="font-size: 12px; color: #666; text-align: center; line-height: 1.6;">
-      Once you verify your custom domain in Resend Dashboard, you will be able to send to any customer address from <code>orders@yourdomain.com</code>.
-    </p>
-  `;
-
-  return baseEmailWrapper("SXTN — Resend Test Verification", content);
 }
