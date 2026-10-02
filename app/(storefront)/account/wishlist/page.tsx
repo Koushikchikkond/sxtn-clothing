@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -91,7 +91,7 @@ export default function WishlistPage() {
             return (
               <div key={product_id} className="group relative">
                 {/* Image */}
-                <Link href={`/products/${products.slug}`} className="block relative aspect-[3/4] bg-zinc-900 overflow-hidden">
+                <Link href={`/products/${products.slug}`} prefetch={true} className="block relative aspect-[3/4] bg-zinc-900 overflow-hidden">
                   {coverImage ? (
                     <Image
                       src={coverImage.url}
@@ -115,7 +115,7 @@ export default function WishlistPage() {
                 </Link>
                 {/* Info */}
                 <div className="mt-2.5 space-y-1 px-2 pb-1">
-                  <Link href={`/products/${products.slug}`} className="block">
+                  <Link href={`/products/${products.slug}`} prefetch={true} className="block">
                     <p className="font-display font-bold uppercase tracking-tight text-base sm:text-lg text-white truncate group-hover:underline underline-offset-2">
                       {products.name}
                     </p>

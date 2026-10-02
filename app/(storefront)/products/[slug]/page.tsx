@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/static";
 import { ProductDetails } from "@/components/storefront/product-details";
 import { ShoppingBag } from "lucide-react";
 import type { Product, ProductImage, ProductVariant } from "@/types/database.types";
+
+// Enable Incremental Static Regeneration (ISR)
+// Caches rendered HTML at Edge CDN for 60 seconds. High traffic on launch day serves in ~30ms!
+export const revalidate = 60;
 
 type ProductWithRelations = Product & {
   product_images: ProductImage[];
@@ -19,9 +23,29 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
+/**
+ * Pre-generate static HTML for all active products at build time.
+ * Makes the very first visit instantaneous for every product.
+ */
+export async function generateStaticParams() {
+  try {
+    const supabase = createStaticClient();
+    const { data: products } = await supabase
+      .from("products")
+      .select("slug")
+      .eq("is_active", true);
+
+    return (products || []).map((p) => ({
+      slug: p.slug,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createStaticClient();
 
   // Fetch the main product
   const { data: product, error } = await supabase
@@ -33,10 +57,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
     `)
     .eq("slug", slug)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (error || !product) {
-    console.error("Error fetching product:", error);
     notFound();
   }
 
@@ -95,47 +118,49 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
           <div className="grid w-full grid-cols-2 md:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12 px-0">
             {suggestions.map((s) => {
-              const cover = [...(s.product_images ?? [])]
-                .sort((a, b) => a.position - b.position)[0];
+              const cover = [...(s.product_images ?? [])].sort(
+                (a, b) => a.position - b.position
+              )[0];
               return (
                 <Link
                   key={s.id}
                   href={`/products/${s.slug}`}
+                  prefetch={true}
                   className="group flex flex-col gap-3"
                 >
                   <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
-                      {cover ? (
-                        <Image
-                          src={cover.url}
-                          alt={s.name}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-8 h-8 text-white/20" />
-                        </div>
+                    {cover ? (
+                      <Image
+                        src={cover.url}
+                        alt={s.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ShoppingBag className="w-8 h-8 text-white/20" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
+                    <h3 className="font-display font-bold tracking-tight uppercase text-base sm:text-lg md:text-xl text-white leading-snug">
+                      {s.name}
+                    </h3>
+                    <div className="flex items-center gap-2.5 mt-1">
+                      <p className="font-display font-bold tracking-tight text-base sm:text-lg md:text-xl text-white">
+                        INR {s.price.toLocaleString("en-IN")}
+                      </p>
+                      {s.compare_at_price && (
+                        <p className="text-xs sm:text-sm text-white/40 line-through">
+                          INR {s.compare_at_price.toLocaleString("en-IN")}
+                        </p>
                       )}
                     </div>
-                    <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
-                      <h3 className="font-display font-bold tracking-tight uppercase text-base sm:text-lg md:text-xl text-white leading-snug">
-                        {s.name}
-                      </h3>
-                      <div className="flex items-center gap-2.5 mt-1">
-                        <p className="font-display font-bold tracking-tight text-base sm:text-lg md:text-xl text-white">
-                          INR {s.price.toLocaleString("en-IN")}
-                        </p>
-                        {s.compare_at_price && (
-                          <p className="text-xs sm:text-sm text-white/40 line-through">
-                            INR {s.compare_at_price.toLocaleString("en-IN")}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </section>
       )}
     </div>

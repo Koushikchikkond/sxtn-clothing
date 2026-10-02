@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import Image from "next/image";
 import { Product, ProductImage } from "@/types/database.types";
 
@@ -20,7 +20,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
 
   return (
-    <Link href={`/products/${product.slug}`} className="group block">
+    <Link href={`/products/${product.slug}`} prefetch={true} className="group block">
       <div className="relative aspect-[3/4] mb-3 bg-sxtn-gray-900 overflow-hidden">
         {primaryImage ? (
           <>
