@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderStatusEmail } from "@/lib/email/resend";
+import { createRazorpayRefund } from "@/lib/razorpay";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
-    const { status, trackingNumber, courierName, trackingUrl, reason, notes } = body;
+    const { status, trackingNumber, courierName, trackingUrl, reason, notes, autoRefund } = body;
 
     const validStatuses = ["pending", "paid", "confirmed", "shipped", "delivered", "cancelled"];
     if (!status || !validStatuses.includes(status)) {
@@ -30,14 +31,34 @@ export async function POST(
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
 
+    // Optional: Process automated Razorpay refund if cancelling a paid order
+    let refundResult = null;
+    let refundNote = "";
+    if (status === "cancelled" && autoRefund && order.razorpay_payment_id) {
+      try {
+        refundResult = await createRazorpayRefund({
+          paymentId: order.razorpay_payment_id,
+          amount: Math.round(order.total * 100),
+          notes: {
+            orderId: order.id,
+            reason: reason || "Admin cancelled order",
+          },
+        });
+        refundNote = ` | Razorpay Refund: ${refundResult.id} (Status: ${refundResult.status})`;
+      } catch (refundErr) {
+        console.error("[POST /api/admin/orders/[id]/status] Auto-refund error:", refundErr);
+        refundNote = ` | Auto-refund note: ${refundErr instanceof Error ? refundErr.message : "Refund API error"}`;
+      }
+    }
+
     // 2. Update order status in Supabase
     const updatePayload: Record<string, any> = {
       status,
       updated_at: new Date().toISOString(),
     };
 
-    if (status === "cancelled" && (reason || notes)) {
-      const fullReason = reason || notes;
+    if (status === "cancelled") {
+      const fullReason = (reason || notes || "Order cancelled") + refundNote;
       updatePayload.notes = `Cancelled: ${fullReason}${order.notes ? ` (Prev: ${order.notes})` : ""}`;
     } else if (trackingNumber || courierName) {
       updatePayload.notes = `Courier: ${courierName || "Standard"} | Tracking: ${trackingNumber || "N/A"}`;

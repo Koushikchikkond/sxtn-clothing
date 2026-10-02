@@ -143,6 +143,32 @@ export async function POST(req: NextRequest) {
           console.warn("[Razorpay Webhook] Payment failed email notice:", err);
         });
       }
+    } else if (event === "refund.processed" || event === "refund.created") {
+      const refundEntity = eventData.payload?.refund?.entity;
+      const paymentId = refundEntity?.payment_id;
+      const refundId = refundEntity?.id;
+      const refundAmount = refundEntity?.amount ? refundEntity.amount / 100 : 0;
+
+      console.log(`[Razorpay Webhook] Refund ${event} received for payment ${paymentId}: ₹${refundAmount}`);
+
+      if (paymentId) {
+        const { data: order } = await (supabase.from("orders") as any)
+          .select("id, notes, status")
+          .eq("razorpay_payment_id", paymentId)
+          .maybeSingle();
+
+        if (order) {
+          const noteText = `Razorpay Refund Settled: ₹${refundAmount} (ID: ${refundId})`;
+          await (supabase.from("orders") as any)
+            .update({
+              status: "cancelled",
+              notes: order.notes ? `${order.notes} | ${noteText}` : noteText,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", order.id);
+          console.log(`[Razorpay Webhook] Order ${order.id} updated with refund: ${refundId}`);
+        }
+      }
     }
 
     return NextResponse.json({ received: true });

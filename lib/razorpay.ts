@@ -275,3 +275,73 @@ export async function calculateVerifiedCartTotal(
     items: verifiedItems,
   };
 }
+
+export interface RazorpayRefundResponse {
+  id: string;
+  entity: "refund";
+  amount: number;
+  currency: string;
+  payment_id: string;
+  status: string;
+  receipt?: string;
+  notes?: Record<string, string>;
+  created_at: number;
+}
+
+/**
+ * Initiates an automatic refund for a payment via the Razorpay API.
+ */
+export async function createRazorpayRefund(params: {
+  paymentId: string;
+  amount?: number; // in paise (optional, defaults to full amount)
+  notes?: Record<string, string>;
+  receipt?: string;
+}): Promise<RazorpayRefundResponse> {
+  const { keyId, keySecret } = getRazorpayCredentials();
+
+  if (!params.paymentId) {
+    throw new Error("Missing required paymentId for refund.");
+  }
+
+  const credentials = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+  const payload: Record<string, any> = {};
+
+  if (params.amount && params.amount > 0) {
+    payload.amount = Math.round(params.amount);
+  }
+  if (params.notes) {
+    payload.notes = params.notes;
+  }
+  if (params.receipt) {
+    payload.receipt = params.receipt;
+  }
+
+  const response = await fetch(
+    `https://api.razorpay.com/v1/payments/${params.paymentId}/refund`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${credentials}`,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    console.error("[Razorpay API] Refund creation error:", {
+      status: response.status,
+      paymentId: params.paymentId,
+      errorBody,
+    });
+    const errorMsg =
+      errorBody?.error?.description ||
+      `Razorpay refund failed with status ${response.status}`;
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+  return data;
+}
+

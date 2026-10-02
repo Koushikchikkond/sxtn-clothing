@@ -49,6 +49,7 @@ export function OrderStatusManager({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState(CANCEL_REASONS[0]);
   const [customReason, setCustomReason] = useState("");
+  const [autoRefund, setAutoRefund] = useState(true);
 
   async function handleUpdateStatus(
     newStatus: string,
@@ -58,6 +59,7 @@ export function OrderStatusManager({
       trackingUrl?: string;
       reason?: string;
       notes?: string;
+      autoRefund?: boolean;
     }
   ) {
     setLoading(true);
@@ -74,6 +76,7 @@ export function OrderStatusManager({
           trackingUrl: meta?.trackingUrl,
           reason: meta?.reason,
           notes: meta?.notes,
+          autoRefund: meta?.autoRefund,
         }),
       });
 
@@ -347,6 +350,23 @@ export function OrderStatusManager({
                   />
                 </div>
               )}
+
+              {status === "paid" && (
+                <div style={{ background: "#fef2f2", border: "1px solid #fecaca", padding: "10px", borderRadius: "4px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.78rem", color: "#991b1b", fontWeight: 700 }}>
+                    <input
+                      type="checkbox"
+                      checked={autoRefund}
+                      onChange={(e) => setAutoRefund(e.target.checked)}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span>Process automatic refund via Razorpay API</span>
+                  </label>
+                  <p style={{ margin: "4px 0 0 22px", fontSize: "0.7rem", color: "#b91c1c", lineHeight: 1.4 }}>
+                    Razorpay will immediately refund the customer&apos;s source account and record the refund ID in the database.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
@@ -368,6 +388,7 @@ export function OrderStatusManager({
                   handleUpdateStatus("cancelled", {
                     reason: finalReason,
                     notes: finalReason,
+                    autoRefund: status === "paid" ? autoRefund : false,
                   });
                 }}
                 style={{ padding: "8px 16px", fontSize: "0.75rem", fontWeight: 700, background: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
