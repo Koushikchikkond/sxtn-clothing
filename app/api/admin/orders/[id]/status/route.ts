@@ -11,7 +11,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
-    const { status, trackingNumber, courierName, trackingUrl } = body;
+    const { status, trackingNumber, courierName, trackingUrl, reason, notes } = body;
 
     const validStatuses = ["pending", "paid", "confirmed", "shipped", "delivered", "cancelled"];
     if (!status || !validStatuses.includes(status)) {
@@ -36,7 +36,10 @@ export async function POST(
       updated_at: new Date().toISOString(),
     };
 
-    if (trackingNumber || courierName) {
+    if (status === "cancelled" && (reason || notes)) {
+      const fullReason = reason || notes;
+      updatePayload.notes = `Cancelled: ${fullReason}${order.notes ? ` (Prev: ${order.notes})` : ""}`;
+    } else if (trackingNumber || courierName) {
       updatePayload.notes = `Courier: ${courierName || "Standard"} | Tracking: ${trackingNumber || "N/A"}`;
     }
 
@@ -71,6 +74,8 @@ export async function POST(
         trackingNumber: trackingNumber || null,
         courierName: courierName || null,
         trackingUrl: trackingUrl || null,
+        reason: reason || null,
+        notes: notes || null,
         total: order.total,
       });
     }

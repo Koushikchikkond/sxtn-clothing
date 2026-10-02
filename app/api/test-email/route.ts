@@ -6,6 +6,8 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const to = searchParams.get("to");
+  const senderType = (searchParams.get("senderType") || "default") as any;
+  const templateType = (searchParams.get("templateType") || "ping") as any;
 
   if (!to) {
     return NextResponse.json(
@@ -18,14 +20,14 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const result = await sendTestEmail(to);
+  const result = await sendTestEmail({ to, senderType, templateType });
 
   if (!result.success) {
     return NextResponse.json(
       {
         success: false,
         error: result.error,
-        help: "Note: In test mode without a verified domain, Resend only allows sending to the email address registered on your Resend account, from 'onboarding@resend.dev'.",
+        from: (result as any).from,
       },
       { status: 400 }
     );
@@ -33,16 +35,16 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    message: `Test email sent successfully to ${to}! Please check your inbox or spam folder.`,
-    emailId: result.id,
-    from: result.from,
+    message: `Test email (${templateType}) sent successfully to ${to} from ${(result as any).from}!`,
+    emailId: (result as any).id,
+    from: (result as any).from,
   });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const to = body.to;
+    const { to, senderType, templateType, cancellationReason, courierName, trackingNumber } = body;
 
     if (!to || typeof to !== "string" || !to.includes("@")) {
       return NextResponse.json(
@@ -51,14 +53,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await sendTestEmail(to);
+    const result = await sendTestEmail({
+      to,
+      senderType,
+      templateType,
+      cancellationReason,
+      courierName,
+      trackingNumber,
+    });
 
     if (!result.success) {
       return NextResponse.json(
         {
           success: false,
           error: result.error,
-          help: "In test mode without a verified domain, Resend only allows sending to the email registered on your Resend account.",
+          from: (result as any).from,
         },
         { status: 400 }
       );
@@ -66,9 +75,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Test email sent successfully to ${to}!`,
-      emailId: result.id,
-      from: result.from,
+      message: `Email (${templateType || "ping"}) sent successfully to ${to} from ${(result as any).from}!`,
+      emailId: (result as any).id,
+      from: (result as any).from,
+      subject: (result as any).subject,
     });
   } catch (err: unknown) {
     return NextResponse.json(

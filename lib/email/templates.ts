@@ -318,9 +318,11 @@ export function getOrderStatusUpdateHtml(params: {
   trackingNumber?: string | null;
   courierName?: string | null;
   trackingUrl?: string | null;
+  reason?: string | null;
+  notes?: string | null;
   total?: number;
 }): string {
-  const { orderId, status, recipientName, trackingNumber, courierName, trackingUrl } = params;
+  const { orderId, status, recipientName, trackingNumber, courierName, trackingUrl, reason, notes, total } = params;
   const shortId = orderId.slice(0, 8).toUpperCase();
 
   let statusTitle = "Order Update";
@@ -329,7 +331,7 @@ export function getOrderStatusUpdateHtml(params: {
   let badgeBg = "#1f1f1f";
 
   if (status === "confirmed") {
-    statusTitle = "Order Confirmed";
+    statusTitle = "Order Confirmed & Preparing";
     statusMessage = "Your order has been accepted and is currently being packed with precision.";
     badgeColor = "#a78bfa";
     badgeBg = "#2e1065";
@@ -345,7 +347,7 @@ export function getOrderStatusUpdateHtml(params: {
     badgeBg = "#052e16";
   } else if (status === "cancelled") {
     statusTitle = "Order Cancelled";
-    statusMessage = "Your order has been cancelled. If you already made a payment, your refund will be processed within 5-7 business days.";
+    statusMessage = "Your order has been cancelled. If you already made a payment, your full refund will be processed back to your original payment method within 5–7 business days.";
     badgeColor = "#f87171";
     badgeBg = "#450a0a";
   }
@@ -362,6 +364,22 @@ export function getOrderStatusUpdateHtml(params: {
       Hello <strong>${recipientName}</strong>, ${statusMessage}
     </p>
 
+    <!-- Cancellation Reason Callout -->
+    ${
+      status === "cancelled" && (reason || notes)
+        ? `
+      <div style="background: #1c1010; border: 1px solid #450a0a; border-radius: 4px; padding: 16px 20px; margin-bottom: 24px;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #f87171; font-weight: 800; margin-bottom: 4px;">
+          Reason for Cancellation
+        </div>
+        <div style="font-size: 13px; color: #ffffff; line-height: 1.5;">
+          ${reason || notes}
+        </div>
+      </div>
+    `
+        : ""
+    }
+
     <div style="background: #141414; border: 1px solid #222222; padding: 16px 20px; margin-bottom: 24px;">
       <table style="width: 100%;">
         <tr>
@@ -375,6 +393,16 @@ export function getOrderStatusUpdateHtml(params: {
           <td style="text-align: right;">
             <div class="label">Tracking Number (${courierName || "Courier"})</div>
             <div class="value">${trackingNumber}</div>
+          </td>
+          `
+              : ""
+          }
+          ${
+            total
+              ? `
+          <td style="text-align: right;">
+            <div class="label">Total Amount</div>
+            <div class="value">₹${total.toLocaleString("en-IN")}</div>
           </td>
           `
               : ""

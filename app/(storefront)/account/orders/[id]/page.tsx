@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import React from "react";
 import type { Order, OrderItem } from "@/types/database.types";
+import { CustomerOrderActions } from "@/components/account/customer-order-actions";
 
 const STATUS_COLOURS: Record<string, string> = {
   pending: "#f59e0b",
@@ -48,7 +49,7 @@ export default async function OrderDetailPage({
   return (
     <div className="pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto min-h-screen">
       {/* Header */}
-      <div className="mb-10">
+      <div className="mb-6">
         <Link
           href="/account/orders"
           className="text-xs uppercase tracking-widest text-white/30 hover:text-white transition-colors"
@@ -78,6 +79,14 @@ export default async function OrderDetailPage({
           })}
         </p>
       </div>
+
+      {/* Customer Cancellation / Tracking / Reason Banners */}
+      <CustomerOrderActions
+        orderId={order.id}
+        status={order.status}
+        notes={order.notes}
+        total={order.total}
+      />
 
       {/* Progress Bar */}
       {order.status !== "cancelled" && (

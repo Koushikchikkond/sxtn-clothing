@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendOrderConfirmationEmail, sendPaymentFailedEmail } from "@/lib/email/resend";
 
 export const runtime = "nodejs";
 
@@ -63,9 +64,8 @@ export async function POST(req: NextRequest) {
 
       if (orderId) {
         // Find existing order in Supabase
-        const { data: existingOrder, error: fetchError } = await supabase
-          .from("orders")
-          .select("id, status, razorpay_payment_id")
+        const { data: existingOrder, error: fetchError } = await (supabase.from("orders") as any)
+          .select("*, order_items(*)")
           .eq("razorpay_order_id", orderId)
           .maybeSingle();
 
@@ -76,19 +76,16 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        const order = existingOrder as {
-          id: string;
-          status: string;
-          razorpay_payment_id: string | null;
-        } | null;
+        const order = existingOrder;
 
         if (order) {
-          // If not already marked as paid, update it
-          if (order.status !== "paid") {
+          // If not already marked as paid, update it and send confirmation
+          if (order.status !== "paid" && order.status !== "confirmed") {
             const { error: updateError } = await (supabase.from("orders") as any)
               .update({
                 status: "paid",
                 razorpay_payment_id: paymentId || order.razorpay_payment_id,
+                updated_at: new Date().toISOString(),
               })
               .eq("id", order.id);
 
@@ -101,13 +98,50 @@ export async function POST(req: NextRequest) {
               console.log(
                 `[Razorpay Webhook] Order ${order.id} marked as paid via webhook`
               );
+
+              // Trigger order confirmation email if customer email exists
+              const customerEmail =
+                order.guest_email || (order.shipping_address as any)?.email;
+              if (customerEmail) {
+                sendOrderConfirmationEmail({
+                  to: customerEmail,
+                  orderId: order.id,
+                  total: order.total,
+                  subtotal: order.subtotal,
+                  shippingFee: order.shipping_fee,
+                  paymentId: paymentId || order.razorpay_payment_id || undefined,
+                  items: (order.order_items || []).map((it: any) => ({
+                    name: it.product_name,
+                    size: it.size,
+                    color: it.color,
+                    quantity: it.quantity,
+                    price: it.unit_price,
+                  })),
+                  address: order.shipping_address || {},
+                }).catch((emailErr) => {
+                  console.warn("[Razorpay Webhook] Confirmation email notice:", emailErr);
+                });
+              }
             }
-          } else {
-            console.log(
-              `[Razorpay Webhook] Order ${order.id} was already marked as paid`
-            );
           }
         }
+      }
+    } else if (event === "payment.failed") {
+      const paymentEntity = eventData.payload?.payment?.entity;
+      const customerEmail = paymentEntity?.email;
+      const orderId = paymentEntity?.order_id;
+      const amount = paymentEntity?.amount ? paymentEntity.amount / 100 : undefined;
+
+      console.warn(`[Razorpay Webhook] Payment failed for order ${orderId}:`, paymentEntity?.error_description);
+
+      if (customerEmail) {
+        sendPaymentFailedEmail({
+          to: customerEmail,
+          orderId: orderId || undefined,
+          total: amount,
+        }).catch((err) => {
+          console.warn("[Razorpay Webhook] Payment failed email notice:", err);
+        });
       }
     }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Mail, CheckCircle2, Truck, PackageCheck, Ban, Check } from "lucide-react";
+import { Loader2, Mail, CheckCircle2, Truck, PackageCheck, Ban, Check, AlertTriangle } from "lucide-react";
 
 interface OrderStatusManagerProps {
   orderId: string;
@@ -19,6 +19,16 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   cancelled: { label: "Cancelled", color: "#ef4444", bg: "#fee2e2" },
 };
 
+const CANCEL_REASONS = [
+  "Customer requested cancellation",
+  "Incorrect size or variant selected by customer",
+  "Item out of stock / inventory adjustment",
+  "Delivery address unreachable or invalid",
+  "Payment verification issue or duplicate order",
+  "Customer changed mind / personal reasons",
+  "Other (custom reason)",
+];
+
 export function OrderStatusManager({
   orderId,
   initialStatus,
@@ -29,15 +39,26 @@ export function OrderStatusManager({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  // Modal / prompt for shipping info
+  // Dispatch / Shipping Modal
   const [showShippingModal, setShowShippingModal] = useState(false);
   const [courierName, setCourierName] = useState("Delhivery");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
 
+  // Cancel Modal
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState(CANCEL_REASONS[0]);
+  const [customReason, setCustomReason] = useState("");
+
   async function handleUpdateStatus(
     newStatus: string,
-    shippingMeta?: { courierName: string; trackingNumber: string; trackingUrl: string }
+    meta?: {
+      courierName?: string;
+      trackingNumber?: string;
+      trackingUrl?: string;
+      reason?: string;
+      notes?: string;
+    }
   ) {
     setLoading(true);
     setMessage(null);
@@ -48,9 +69,11 @@ export function OrderStatusManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: newStatus,
-          courierName: shippingMeta?.courierName,
-          trackingNumber: shippingMeta?.trackingNumber,
-          trackingUrl: shippingMeta?.trackingUrl,
+          courierName: meta?.courierName,
+          trackingNumber: meta?.trackingNumber,
+          trackingUrl: meta?.trackingUrl,
+          reason: meta?.reason,
+          notes: meta?.notes,
         }),
       });
 
@@ -62,10 +85,11 @@ export function OrderStatusManager({
 
       setStatus(newStatus);
       setShowShippingModal(false);
+      setShowCancelModal(false);
 
       const emailNote = data.emailSent
-        ? `Status changed to ${newStatus.toUpperCase()} and notification email sent to ${customerEmail || "customer"}!`
-        : `Status changed to ${newStatus.toUpperCase()}.`;
+        ? `Status updated to ${newStatus.toUpperCase()}! Notification email sent to ${customerEmail || "customer"} via Resend.`
+        : `Status updated to ${newStatus.toUpperCase()} in database.`;
 
       setMessage({ text: emailNote, type: "success" });
       router.refresh();
@@ -86,7 +110,7 @@ export function OrderStatusManager({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "12px" }}>
         <div>
           <h3 style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#000", margin: 0 }}>
-            Order Management & Customer Notification
+            Order Fulfillment & Notification Automation
           </h3>
           <p style={{ fontSize: "0.75rem", color: "#666", margin: "4px 0 0 0" }}>
             Customer Email: <strong style={{ color: "#000" }}>{customerEmail || "No email on record"}</strong>
@@ -142,11 +166,7 @@ export function OrderStatusManager({
           <button
             type="button"
             disabled={loading}
-            onClick={() => {
-              if (confirm("Are you sure you want to cancel this order? An email notification will be sent to the customer.")) {
-                handleUpdateStatus("cancelled");
-              }
-            }}
+            onClick={() => setShowCancelModal(true)}
             style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", padding: "6px 12px", background: "#fff", color: "#ef4444", border: "1px solid #ef4444", borderRadius: "3px", cursor: "pointer", marginLeft: "auto" }}
           >
             <Ban className="w-3 h-3" />
@@ -158,7 +178,7 @@ export function OrderStatusManager({
       {loading && (
         <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "#666", marginTop: "10px" }}>
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          Updating status and sending customer email via Resend…
+          Updating Supabase database and sending customer notification email via Resend…
         </div>
       )}
 
@@ -182,7 +202,7 @@ export function OrderStatusManager({
         </div>
       )}
 
-      {/* Dispatch Details Modal */}
+      {/* ── Dispatch Details Modal ───────────────────────── */}
       {showShippingModal && (
         <div
           style={{
@@ -198,10 +218,10 @@ export function OrderStatusManager({
         >
           <div style={{ background: "#fff", borderRadius: "6px", maxWidth: "440px", width: "100%", padding: "20px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}>
             <h4 style={{ fontSize: "1rem", fontWeight: 800, textTransform: "uppercase", margin: "0 0 8px 0", color: "#000" }}>
-              Dispatch Order
+              Dispatch / Out for Delivery
             </h4>
             <p style={{ fontSize: "0.75rem", color: "#666", margin: "0 0 16px 0", lineHeight: 1.5 }}>
-              Enter tracking info to send an automated <strong>&quot;Out for Delivery&quot;</strong> email with tracking details to <strong>{customerEmail || "the customer"}</strong>.
+              Enter tracking info to record in Supabase and send an automated <strong>&quot;Out for Delivery&quot;</strong> email to <strong>{customerEmail || "the customer"}</strong> from <code>shipping@6xtn.in</code>.
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
@@ -263,6 +283,96 @@ export function OrderStatusManager({
                 style={{ padding: "8px 16px", fontSize: "0.75rem", fontWeight: 700, background: "#0284c7", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
               >
                 {loading ? "Sending..." : "Dispatch & Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel Order Modal with Reasons ───────────────── */}
+      {showCancelModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "1rem",
+          }}
+        >
+          <div style={{ background: "#fff", borderRadius: "6px", maxWidth: "460px", width: "100%", padding: "20px", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <AlertTriangle style={{ width: "18px", height: "18px", color: "#ef4444" }} />
+              <h4 style={{ fontSize: "1rem", fontWeight: 800, textTransform: "uppercase", margin: 0, color: "#ef4444" }}>
+                Cancel Order
+              </h4>
+            </div>
+
+            <p style={{ fontSize: "0.75rem", color: "#666", margin: "0 0 16px 0", lineHeight: 1.5 }}>
+              Select a reason for cancellation. This will be permanently saved to Supabase and included in the cancellation notification email sent to <strong>{customerEmail || "the customer"}</strong> from <code>support@6xtn.in</code>.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "#555", marginBottom: "4px" }}>
+                  Cancellation Reason *
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  style={{ width: "100%", padding: "8px 10px", fontSize: "0.85rem", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box" }}
+                >
+                  {CANCEL_REASONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {cancelReason === "Other (custom reason)" && (
+                <div>
+                  <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "#555", marginBottom: "4px" }}>
+                    Custom Reason / Notes *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="Enter details about why this order was cancelled..."
+                    style={{ width: "100%", padding: "8px 10px", fontSize: "0.85rem", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box" }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                style={{ padding: "8px 14px", fontSize: "0.75rem", border: "1px solid #ccc", background: "#fff", color: "#555", borderRadius: "4px", cursor: "pointer" }}
+              >
+                Go Back
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  const finalReason =
+                    cancelReason === "Other (custom reason)"
+                      ? customReason.trim() || "Administrative cancellation"
+                      : cancelReason;
+                  handleUpdateStatus("cancelled", {
+                    reason: finalReason,
+                    notes: finalReason,
+                  });
+                }}
+                style={{ padding: "8px 16px", fontSize: "0.75rem", fontWeight: 700, background: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
+              >
+                {loading ? "Cancelling..." : "Confirm Cancellation & Send Email"}
               </button>
             </div>
           </div>
