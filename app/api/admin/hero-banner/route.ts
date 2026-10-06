@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       {
         desktop_url,
         mobile_url,
-        alt_text: alt_text || "SXTN Hero",
+        alt_text: alt_text || "6XTN Hero",
       },
       supabase
     );

@@ -8,16 +8,16 @@ import { SmoothScrolling } from "./smooth-scrolling";
 
 export const metadata: Metadata = {
   title: {
-    default: "SXTN — Streetwear",
-    template: "%s | SXTN",
+    default: "6XTN — Streetwear",
+    template: "%s | 6XTN",
   },
   description:
-    "SXTN is a direct-to-consumer streetwear brand. Shop the latest drops, collections, and limited-edition pieces.",
-  keywords: ["streetwear", "clothing", "SXTN", "fashion", "India"],
+    "6XTN is a direct-to-consumer streetwear brand. Shop the latest drops, collections, and limited-edition pieces.",
+  keywords: ["streetwear", "clothing", "6XTN", "fashion", "India"],
   openGraph: {
     type: "website",
     locale: "en_IN",
-    siteName: "SXTN",
+    siteName: "6XTN",
   },
   icons: {
     icon: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   appleWebApp: {
-    title: "SXTN",
+    title: "6XTN",
   },
 };
 

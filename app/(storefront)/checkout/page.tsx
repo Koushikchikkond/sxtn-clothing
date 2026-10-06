@@ -325,7 +325,7 @@ export default function CheckoutPage() {
         amount: orderData.amount,
         currency: orderData.currency || "INR",
         order_id: activeOrderId,
-        name: "SXTN",
+        name: "6XTN",
         description: `Order — ${items.length} item${items.length > 1 ? "s" : ""}`,
         prefill: {
           name: form.fullName,
@@ -420,7 +420,7 @@ export default function CheckoutPage() {
         <div className="flex items-end justify-between mb-8 pb-4 border-b border-white/10">
           <div>
             <span className="text-[11px] uppercase tracking-widest text-white/40">
-              SXTN Official Store
+              6XTN Official Store
             </span>
             <h1 className="font-display text-4xl sm:text-5xl uppercase tracking-widest text-white mt-1">
               Checkout
@@ -720,7 +720,7 @@ export default function CheckoutPage() {
                           className="w-4 h-4 rounded border-white/20 bg-white/5 accent-white cursor-pointer"
                         />
                         <span className="text-xs text-white/70 group-hover:text-white transition-colors">
-                          Save this address to my SXTN account for future orders
+                          Save this address to my 6XTN account for future orders
                         </span>
                       </label>
                     </div>

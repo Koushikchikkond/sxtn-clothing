@@ -19,7 +19,7 @@ export type EmailSenderType =
 export function getSenderEmail(type: EmailSenderType = "default"): string {
   const base =
     process.env.RESEND_FROM_EMAIL?.trim().replace(/^["']|["']$/g, "") ||
-    "SXTN <orders@6xtn.in>";
+    "6XTN <orders@6xtn.in>";
 
   // Extract domain from base, e.g. "6xtn.in"
   const domainMatch = base.match(/@([a-zA-Z0-9.-]+)/);
@@ -28,37 +28,37 @@ export function getSenderEmail(type: EmailSenderType = "default"): string {
   if (type === "orders") {
     const custom = process.env.RESEND_FROM_ORDERS?.trim().replace(/^["']|["']$/g, "");
     if (custom) return custom;
-    return `SXTN Orders <orders@${domain}>`;
+    return `6XTN Orders <orders@${domain}>`;
   }
 
   if (type === "shipping") {
     const custom = process.env.RESEND_FROM_SHIPPING?.trim().replace(/^["']|["']$/g, "");
     if (custom) return custom;
-    return `SXTN Shipping <shipping@${domain}>`;
+    return `6XTN Shipping <shipping@${domain}>`;
   }
 
   if (type === "support") {
     const custom = process.env.RESEND_FROM_SUPPORT?.trim().replace(/^["']|["']$/g, "");
     if (custom) return custom;
-    return `SXTN Support <support@${domain}>`;
+    return `6XTN Support <support@${domain}>`;
   }
 
   if (type === "billing") {
     const custom = process.env.RESEND_FROM_BILLING?.trim().replace(/^["']|["']$/g, "");
     if (custom) return custom;
-    return `SXTN Billing <billing@${domain}>`;
+    return `6XTN Billing <billing@${domain}>`;
   }
 
   if (type === "updates") {
     const custom = process.env.RESEND_FROM_UPDATES?.trim().replace(/^["']|["']$/g, "");
     if (custom) return custom;
-    return `SXTN Updates <updates@${domain}>`;
+    return `6XTN Updates <updates@${domain}>`;
   }
 
   if (type === "hello") {
     const custom = process.env.RESEND_FROM_HELLO?.trim().replace(/^["']|["']$/g, "");
     if (custom) return custom;
-    return `SXTN <hello@${domain}>`;
+    return `6XTN <hello@${domain}>`;
   }
 
   return base;
@@ -105,7 +105,7 @@ export async function sendOrderConfirmationEmail(params: {
     const { data, error } = await resend.emails.send({
       from: sender,
       to: [params.to],
-      subject: `Order #${shortId} Confirmed — SXTN`,
+      subject: `Order #${shortId} Confirmed — 6XTN`,
       html,
     });
 
@@ -148,13 +148,13 @@ export async function sendOrderStatusEmail(params: {
     const shortId = params.orderId.slice(0, 8).toUpperCase();
 
     const subjects: Record<string, string> = {
-      confirmed: `Order #${shortId} Confirmed & Preparing — SXTN`,
-      shipped: `Order #${shortId} Dispatched & Out for Delivery — SXTN`,
-      delivered: `Order #${shortId} Delivered Successfully — SXTN`,
-      cancelled: `Order #${shortId} Cancelled — SXTN`,
+      confirmed: `Order #${shortId} Confirmed & Preparing — 6XTN`,
+      shipped: `Order #${shortId} Dispatched & Out for Delivery — 6XTN`,
+      delivered: `Order #${shortId} Delivered Successfully — 6XTN`,
+      cancelled: `Order #${shortId} Cancelled — 6XTN`,
     };
 
-    const subject = subjects[params.status] || `Order #${shortId} Status Update — SXTN`;
+    const subject = subjects[params.status] || `Order #${shortId} Status Update — 6XTN`;
 
     const senderType =
       params.status === "cancelled"
@@ -208,7 +208,7 @@ export async function sendPaymentFailedEmail(params: {
     const { data, error } = await resend.emails.send({
       from: sender,
       to: [params.to],
-      subject: `Payment Incomplete — SXTN Order`,
+      subject: `Payment Incomplete — 6XTN Order`,
       html,
     });
 
@@ -228,11 +228,11 @@ export async function sendPaymentFailedEmail(params: {
 }
 
 export const AVAILABLE_SENDERS = [
-  { id: "orders", email: "orders@6xtn.in", label: "SXTN Orders", desc: "Order confirmation, payment receipts, order received" },
-  { id: "shipping", email: "shipping@6xtn.in", label: "SXTN Shipping", desc: "Out for delivery, dispatched, tracking numbers, delivered" },
-  { id: "support", email: "support@6xtn.in", label: "SXTN Support", desc: "Order cancellation with reasons, refund updates, failed payments" },
-  { id: "billing", email: "billing@6xtn.in", label: "SXTN Billing", desc: "Invoices, payment reconciliation, tax queries" },
-  { id: "updates", email: "updates@6xtn.in", label: "SXTN Updates", desc: "Product drops, restocks, brand notifications" },
-  { id: "hello", email: "hello@6xtn.in", label: "SXTN Concierge", desc: "General brand touchpoint & customer queries" },
+  { id: "orders", email: "orders@6xtn.in", label: "6XTN Orders", desc: "Order confirmation, payment receipts, order received" },
+  { id: "shipping", email: "shipping@6xtn.in", label: "6XTN Shipping", desc: "Out for delivery, dispatched, tracking numbers, delivered" },
+  { id: "support", email: "support@6xtn.in", label: "6XTN Support", desc: "Order cancellation with reasons, refund updates, failed payments" },
+  { id: "billing", email: "billing@6xtn.in", label: "6XTN Billing", desc: "Invoices, payment reconciliation, tax queries" },
+  { id: "updates", email: "updates@6xtn.in", label: "6XTN Updates", desc: "Product drops, restocks, brand notifications" },
+  { id: "hello", email: "hello@6xtn.in", label: "6XTN Concierge", desc: "General brand touchpoint & customer queries" },
 ] as const;
 

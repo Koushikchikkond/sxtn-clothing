@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProductForm } from "@/components/admin/product-form";
 
-export const metadata = { title: "Edit Product — SXTN Admin" };
+export const metadata = { title: "Edit Product — 6XTN Admin" };
 
 export default async function AdminProductEditPage({
   params,

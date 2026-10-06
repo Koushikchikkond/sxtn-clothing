@@ -15,7 +15,7 @@ export default function AdminHeroBannerPage() {
   const [banner, setBanner] = useState<HeroBannerData>({
     desktop_url: "",
     mobile_url: "",
-    alt_text: "SXTN Streetwear Hero",
+    alt_text: "6XTN Streetwear Hero",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

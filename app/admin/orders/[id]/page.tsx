@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
 
-export const metadata = { title: "Order Detail — SXTN Admin" };
+export const metadata = { title: "Order Detail — 6XTN Admin" };
 
 const STATUS_OPTIONS = ["pending", "paid", "confirmed", "shipped", "delivered", "cancelled"] as const;
 

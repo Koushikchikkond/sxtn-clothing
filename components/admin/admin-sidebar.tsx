@@ -131,7 +131,7 @@ export function AdminSidebar() {
         `}</style>
         <nav style={{ padding: "0.75rem 0", flex: 1 }}>{navLinks}</nav>
         <div style={{ padding: "0.75rem 20px", borderTop: "1px solid #eee" }}>
-          <p style={{ fontSize: "0.65rem", color: "#bbb", letterSpacing: "0.08em", textTransform: "uppercase" }}>SXTN Admin v1</p>
+          <p style={{ fontSize: "0.65rem", color: "#bbb", letterSpacing: "0.08em", textTransform: "uppercase" }}>6XTN Admin v1</p>
         </div>
       </aside>
 

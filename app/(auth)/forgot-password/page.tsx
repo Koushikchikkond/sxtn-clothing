@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4">
       {/* Logo */}
       <Link href="/" className="mb-12">
-        <Image src="/brand-logo.svg" alt="SXTN" width={80} height={32} className="h-10 w-auto" />
+        <Image src="/brand-logo.svg" alt="6XTN" width={80} height={32} className="h-10 w-auto" />
       </Link>
 
       <div className="w-full max-w-sm">

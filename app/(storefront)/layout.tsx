@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    default: "SXTN — Streetwear",
-    template: "%s | SXTN",
+    default: "6XTN — Streetwear",
+    template: "%s | 6XTN",
   },
 };
 

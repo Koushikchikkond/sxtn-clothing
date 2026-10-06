@@ -21,7 +21,7 @@ export const DEFAULT_HERO_BANNER: HeroBannerConfig = {
     "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=3000&auto=format&fit=crop",
   mobile_url:
     "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=3000&auto=format&fit=crop",
-  alt_text: "SXTN Hero",
+  alt_text: "6XTN Hero",
 };
 
 // ── Safe JSON parser ───────────────────────────────────────────────

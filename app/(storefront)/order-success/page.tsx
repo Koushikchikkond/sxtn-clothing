@@ -12,7 +12,7 @@ export default function OrderSuccessPage() {
         Order Placed!
       </h1>
       <p className="text-white/50 text-sm max-w-xs leading-relaxed mb-10">
-        Thank you for shopping with SXTN. Your order has been confirmed and will
+        Thank you for shopping with 6XTN. Your order has been confirmed and will
         be shipped within 2–3 business days.
       </p>
 

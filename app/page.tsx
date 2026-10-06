@@ -34,7 +34,7 @@ export default async function Home() {
           <div className="hidden md:block absolute inset-0">
             <Image
               src={heroBanner.desktop_url}
-              alt={heroBanner.alt_text || "SXTN Hero"}
+              alt={heroBanner.alt_text || "6XTN Hero"}
               fill
               className="object-cover opacity-60"
               priority
@@ -46,7 +46,7 @@ export default async function Home() {
           <div className="block md:hidden absolute inset-0">
             <Image
               src={heroBanner.mobile_url}
-              alt={heroBanner.alt_text || "SXTN Hero"}
+              alt={heroBanner.alt_text || "6XTN Hero"}
               fill
               className="object-cover opacity-60"
               priority

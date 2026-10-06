@@ -16,7 +16,7 @@ export function Footer() {
             <Link href="/">
               <Image
                 src="/brand-logo.svg"
-                alt="SXTN"
+                alt="6XTN"
                 width={120}
                 height={48}
                 className="h-12 w-auto invert"
@@ -51,7 +51,7 @@ export function Footer() {
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-5">Info</h4>
             <ul className="space-y-3">
               {[
-                { href: "/about", label: "About SXTN" },
+                { href: "/about", label: "About 6XTN" },
                 { href: "/contact", label: "Contact" },
                 { href: "/faq", label: "FAQ" },
                 { href: "/privacy", label: "Privacy Policy" },
@@ -73,7 +73,7 @@ export function Footer() {
                 <a href="tel:+918369950066" className="text-sm text-white/70 hover:text-white transition-colors">+91 836-995-0066</a>
               </li>
               <li>
-                <a href="mailto:support@sxtn.in" className="text-sm text-white/70 hover:text-white transition-colors">support@sxtn.in</a>
+                <a href="mailto:support@6xtn.in" className="text-sm text-white/70 hover:text-white transition-colors">support@6xtn.in</a>
               </li>
             </ul>
           </div>
@@ -82,7 +82,7 @@ export function Footer() {
           <div className="col-span-2 flex items-start justify-end">
             <Image
               src="/open-menu-logo.jpeg"
-              alt="SXTN Star"
+              alt="6XTN Star"
               width={100}
               height={100}
               className="w-24 h-24 object-cover rounded-full opacity-80"
@@ -92,7 +92,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-16 pt-6 border-t border-white/10 flex items-center justify-between">
-          <p className="text-xs text-white/30">© {year} SXTN. All rights reserved.</p>
+          <p className="text-xs text-white/30">© {year} 6XTN. All rights reserved.</p>
           <p className="text-xs text-white/30">Made in India 🇮🇳</p>
         </div>
       </div>
@@ -144,13 +144,13 @@ export function Footer() {
         <div className="flex flex-col items-center gap-4 pt-4 border-t border-white/10">
           <Image
             src="/open-menu-logo.jpeg"
-            alt="SXTN Star"
+            alt="6XTN Star"
             width={64}
             height={64}
             className="w-16 h-16 object-cover rounded-full opacity-80"
           />
           <div className="text-center">
-            <p className="text-xs text-white/30">© {year} SXTN. All rights reserved.</p>
+            <p className="text-xs text-white/30">© {year} 6XTN. All rights reserved.</p>
             <p className="text-xs text-white/30 mt-1">Made in India 🇮🇳</p>
           </div>
         </div>

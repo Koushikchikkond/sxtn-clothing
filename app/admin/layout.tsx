@@ -79,7 +79,7 @@ export default async function AdminLayout({
         <Link href="/admin" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           <Image
             src="/brand-logo.svg"
-            alt="SXTN"
+            alt="6XTN"
             width={80}
             height={32}
             priority

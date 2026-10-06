@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import Image from "next/image";
 
-export const metadata = { title: "Products — SXTN Admin" };
+export const metadata = { title: "Products — 6XTN Admin" };
 
 export default async function AdminProductsPage() {
   const supabase = await createClient();

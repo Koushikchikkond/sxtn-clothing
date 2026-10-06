@@ -1,5 +1,5 @@
 /**
- * SXTN Branded Transactional Email Templates
+ * 6XTN Branded Transactional Email Templates
  * Premium dark-mode minimalist aesthetic.
  */
 
@@ -22,7 +22,7 @@ export interface EmailAddress {
   pincode?: string;
 }
 
-const BRAND_NAME = "SXTN";
+const BRAND_NAME = "6XTN";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://6xtn.in";
 
 const baseEmailWrapper = (title: string, content: string) => `
@@ -184,7 +184,7 @@ const baseEmailWrapper = (title: string, content: string) => `
     </div>
     <div class="footer">
       <p>© ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.</p>
-      <p>Questions? Reach out to support at <a href="mailto:support@sxtnclothing.com">support@sxtnclothing.com</a></p>
+      <p>Questions? Reach out to support at <a href="mailto:support@6xtn.in">support@6xtn.in</a></p>
     </div>
   </div>
 </body>
@@ -305,7 +305,7 @@ export function getOrderConfirmationHtml(params: {
     </div>
   `;
 
-  return baseEmailWrapper(`Order #${shortId} Confirmed — SXTN`, content);
+  return baseEmailWrapper(`Order #${shortId} Confirmed — 6XTN`, content);
 }
 
 /**
@@ -430,7 +430,7 @@ export function getOrderStatusUpdateHtml(params: {
     }
   `;
 
-  return baseEmailWrapper(`Order #${shortId}: ${statusTitle} — SXTN`, content);
+  return baseEmailWrapper(`Order #${shortId}: ${statusTitle} — 6XTN`, content);
 }
 
 /**
@@ -474,5 +474,5 @@ export function getPaymentFailedHtml(params: {
     </div>
   `;
 
-  return baseEmailWrapper("Payment Incomplete — SXTN", content);
+  return baseEmailWrapper("Payment Incomplete — 6XTN", content);
 }

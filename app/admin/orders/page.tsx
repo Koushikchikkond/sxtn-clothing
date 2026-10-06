@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
-export const metadata = { title: "Orders — SXTN Admin" };
+export const metadata = { title: "Orders — 6XTN Admin" };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   pending:   { bg: "#fffbeb", text: "#92400e", border: "#f59e0b" },

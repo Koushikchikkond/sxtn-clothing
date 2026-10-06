@@ -67,7 +67,7 @@ function FullScreenMenu({
             <Link href="/" onClick={onClose}>
               <Image
                 src="/brand-logo.svg"
-                alt="SXTN"
+                alt="6XTN"
                 width={80}
                 height={32}
                 className="h-8 w-auto invert"
@@ -303,7 +303,7 @@ export function Header() {
               <Link href="/" className="flex items-center">
                 <Image
                   src="/brand-logo.svg"
-                  alt="SXTN"
+                  alt="6XTN"
                   width={100}
                   height={40}
                   priority
@@ -360,7 +360,7 @@ export function Header() {
         <Link href="/" style={{ pointerEvents: "auto" }} className="absolute left-1/2 -translate-x-1/2 top-4">
           <Image
             src="/brand-logo.svg"
-            alt="SXTN"
+            alt="6XTN"
             width={70}
             height={28}
             priority
