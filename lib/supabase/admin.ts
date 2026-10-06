@@ -28,9 +28,15 @@ export function createAdminClient() {
   const url = clean(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL);
   const serviceKey = clean(
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.SUPABASE_SECRET_KEY
   );
+
+  if (!serviceKey) {
+    throw new Error(
+      "[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY is not set. " +
+      "Add it to your environment variables. Never use the anon key here."
+    );
+  }
 
   return createClient<Database>(
     url,

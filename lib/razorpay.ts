@@ -41,8 +41,11 @@ export function getRazorpayCredentials() {
   const keySecret = clean(process.env.RAZORPAY_KEY_SECRET);
 
   if (!keyId || !keySecret) {
+    const missing: string[] = [];
+    if (!keyId) missing.push("RAZORPAY_KEY_ID (or NEXT_PUBLIC_RAZORPAY_KEY_ID)");
+    if (!keySecret) missing.push("RAZORPAY_KEY_SECRET");
     throw new Error(
-      "Razorpay API credentials are not properly configured on the server. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET."
+      `Razorpay credentials missing in environment variables: ${missing.join(" and ")}. Please configure them in Vercel Settings -> Environment Variables.`
     );
   }
 

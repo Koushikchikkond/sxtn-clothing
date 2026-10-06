@@ -129,9 +129,11 @@ export async function POST(req: NextRequest) {
         await adminDb.from("order_items").insert(orderItems as any);
 
         // Send Order Confirmation & Payment Receipt Email via Resend
+        // NOTE: Must be awaited — Vercel serverless kills fire-and-forget tasks
+        // on function return, so the email would never be sent without await.
         const customerEmail = user?.email || address?.email;
         if (customerEmail) {
-          sendOrderConfirmationEmail({
+          const emailResult = await sendOrderConfirmationEmail({
             to: customerEmail,
             orderId: (order as { id: string }).id,
             total: verified.total,
@@ -147,8 +149,10 @@ export async function POST(req: NextRequest) {
             address: address,
             paymentId: razorpay_payment_id,
           }).catch((emailErr) => {
-            console.warn("[POST /api/verify-payment] Notice: Email notification skipped/failed:", emailErr);
+            console.warn("[POST /api/verify-payment] Email send error:", emailErr);
+            return { success: false, error: String(emailErr) };
           });
+          console.log(`[POST /api/verify-payment] Confirmation email result:`, emailResult);
         }
 
         return NextResponse.json({

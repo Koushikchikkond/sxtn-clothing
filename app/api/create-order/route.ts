@@ -12,9 +12,11 @@ export async function POST(req: NextRequest) {
     let credentials;
     try {
       credentials = getRazorpayCredentials();
-    } catch {
+    } catch (credErr: unknown) {
+      const msg = credErr instanceof Error ? credErr.message : "Razorpay credentials not configured or unauthorized";
+      console.error("[POST /api/create-order] Credentials error:", msg);
       return NextResponse.json(
-        { error: "Razorpay credentials not configured or unauthorized" },
+        { error: msg },
         { status: 401 }
       );
     }

@@ -100,10 +100,11 @@ export async function POST(req: NextRequest) {
               );
 
               // Trigger order confirmation email if customer email exists
+              // NOTE: Must await — Vercel serverless kills fire-and-forget on function return
               const customerEmail =
                 order.guest_email || (order.shipping_address as any)?.email;
               if (customerEmail) {
-                sendOrderConfirmationEmail({
+                const emailResult = await sendOrderConfirmationEmail({
                   to: customerEmail,
                   orderId: order.id,
                   total: order.total,
@@ -119,8 +120,10 @@ export async function POST(req: NextRequest) {
                   })),
                   address: order.shipping_address || {},
                 }).catch((emailErr) => {
-                  console.warn("[Razorpay Webhook] Confirmation email notice:", emailErr);
+                  console.warn("[Razorpay Webhook] Confirmation email error:", emailErr);
+                  return { success: false };
                 });
+                console.log(`[Razorpay Webhook] Confirmation email result:`, emailResult);
               }
             }
           }
@@ -135,13 +138,16 @@ export async function POST(req: NextRequest) {
       console.warn(`[Razorpay Webhook] Payment failed for order ${orderId}:`, paymentEntity?.error_description);
 
       if (customerEmail) {
-        sendPaymentFailedEmail({
+        // NOTE: Must await — Vercel serverless kills fire-and-forget on function return
+        const failedEmailResult = await sendPaymentFailedEmail({
           to: customerEmail,
           orderId: orderId || undefined,
           total: amount,
         }).catch((err) => {
-          console.warn("[Razorpay Webhook] Payment failed email notice:", err);
+          console.warn("[Razorpay Webhook] Payment failed email error:", err);
+          return { success: false };
         });
+        console.log(`[Razorpay Webhook] Payment failed email result:`, failedEmailResult);
       }
     } else if (event === "refund.processed" || event === "refund.created") {
       const refundEntity = eventData.payload?.refund?.entity;
