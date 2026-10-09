@@ -56,7 +56,7 @@ export const useWishlistStore = create<WishlistState>()(
           // If logged in, save to Supabase wishlists table connected to user's account
           if (user) {
             try {
-              await supabase.from("wishlists").upsert(
+              await (supabase.from("wishlists") as any).upsert(
                 {
                   user_id: user.id,
                   product_id: productId,
@@ -112,7 +112,10 @@ export const useWishlistStore = create<WishlistState>()(
             .select("product_id")
             .eq("user_id", user.id);
 
-          const serverProductIds = (!error && data ? data.map((d) => d.product_id) : []) as string[];
+          const serverProductIds: string[] =
+            !error && data
+              ? (data as Array<{ product_id: string }>).map((d) => d.product_id)
+              : [];
           const localProductIds = get().items;
 
           // 2. Upload any local items not yet in account
@@ -125,7 +128,9 @@ export const useWishlistStore = create<WishlistState>()(
               user_id: user.id,
               product_id: pid,
             }));
-            await supabase.from("wishlists").upsert(rows, { onConflict: "user_id,product_id" });
+            await (supabase.from("wishlists") as any).upsert(rows, {
+              onConflict: "user_id,product_id",
+            });
           }
 
           // 3. Union both lists

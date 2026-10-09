@@ -299,7 +299,11 @@ export type Database = {
           product_id:  string;
           created_at?: string;
         };
-        Update: Record<string, never>;
+        Update: {
+          user_id?:    string;
+          product_id?: string;
+          created_at?: string;
+        };
         Relationships: [];
       };
 
