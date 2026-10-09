@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Product, ProductImage, ProductVariant } from "@/types/database.types";
 import { cn } from "@/lib/utils";
+import { WishlistButton } from "@/components/storefront/wishlist-button";
 
 interface ProductDetailsProps {
   product: Product;
@@ -110,6 +111,14 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
               NO IMAGE
             </div>
           )}
+
+          {/* Bookmark Wishlist Button (Top-Right) */}
+          <WishlistButton
+            productId={product.id}
+            productName={product.name}
+            className="absolute top-3 right-3 sm:top-5 sm:right-5"
+            size="lg"
+          />
         </div>
       </div>
 

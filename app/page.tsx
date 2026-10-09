@@ -4,6 +4,7 @@ import { ArrowRight, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroBanner } from "@/lib/hero-banner";
 import { HeroBannerSlider } from "@/components/storefront/hero-banner-slider";
+import { WishlistButton } from "@/components/storefront/wishlist-button";
 import type { Product, ProductImage } from "@/types/database.types";
 
 type ProductWithCover = Product & { product_images: ProductImage[] };
@@ -68,46 +69,55 @@ export default async function Home() {
                 .sort((a, b) => a.position - b.position)[0];
 
               return (
-                <Link
-                  key={product.id}
-                  href={`/products/${product.slug}`}
-                  className="group flex flex-col gap-3"
-                >
-                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
-                    {cover ? (
-                      <Image
-                        src={cover.url}
-                        alt={product.name}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ShoppingBag className="w-10 h-10 text-white/20" />
-                      </div>
-                    )}
-                    {product.compare_at_price && (
-                      <span className="absolute top-3 left-3 bg-white text-black text-xs font-bold uppercase tracking-widest px-2 py-1">
-                        Sale
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
-                    <h3 className="font-display font-bold tracking-tight uppercase text-sm sm:text-base md:text-base text-white leading-snug">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="font-display font-bold tracking-tight text-sm sm:text-base md:text-base text-white">
-                        INR {product.price.toLocaleString("en-IN")}
-                      </p>
-                      {product.compare_at_price && (
-                        <p className="text-xs text-white/40 line-through">
-                          INR {product.compare_at_price.toLocaleString("en-IN")}
-                        </p>
+                <div key={product.id} className="group relative flex flex-col gap-3">
+                  <Link
+                    href={`/products/${product.slug}`}
+                    className="block"
+                  >
+                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
+                      {cover ? (
+                        <Image
+                          src={cover.url}
+                          alt={product.name}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ShoppingBag className="w-10 h-10 text-white/20" />
+                        </div>
                       )}
+                      {product.compare_at_price && (
+                        <span className="absolute top-3 left-3 bg-white text-black text-xs font-bold uppercase tracking-widest px-2 py-1 z-10">
+                          Sale
+                        </span>
+                      )}
+
+                      {/* Bookmark Wishlist Button (Top-Right) */}
+                      <WishlistButton
+                        productId={product.id}
+                        productName={product.name}
+                        className="absolute top-2.5 right-2.5"
+                        size="sm"
+                      />
                     </div>
-                  </div>
-                </Link>
+                    <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
+                      <h3 className="font-display font-bold tracking-tight uppercase text-sm sm:text-base md:text-base text-white leading-snug">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="font-display font-bold tracking-tight text-sm sm:text-base md:text-base text-white">
+                          INR {product.price.toLocaleString("en-IN")}
+                        </p>
+                        {product.compare_at_price && (
+                          <p className="text-xs text-white/40 line-through">
+                            INR {product.compare_at_price.toLocaleString("en-IN")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </div>
               );
             })}
           </div>

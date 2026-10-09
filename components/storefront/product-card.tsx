@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Product, ProductImage } from "@/types/database.types";
+import { WishlistButton } from "@/components/storefront/wishlist-button";
 
 export type ProductWithImages = Product & {
   product_images: ProductImage[];
@@ -20,40 +21,49 @@ export function ProductCard({ product }: ProductCardProps) {
   const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
 
   return (
-    <Link href={`/products/${product.slug}`} prefetch={true} className="group block">
-      <div className="relative aspect-[3/4] mb-3 bg-sxtn-gray-900 overflow-hidden">
-        {primaryImage ? (
-          <>
-            <Image
-              src={primaryImage.url}
-              alt={primaryImage.alt_text || product.name}
-              fill
-              className="object-cover transition-opacity duration-500 group-hover:opacity-0"
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            />
-            {secondaryImage && (
+    <div className="group block relative">
+      <Link href={`/products/${product.slug}`} prefetch={true} className="block">
+        <div className="relative aspect-[3/4] mb-3 bg-sxtn-gray-900 overflow-hidden">
+          {primaryImage ? (
+            <>
               <Image
-                src={secondaryImage.url}
-                alt={secondaryImage.alt_text || product.name}
+                src={primaryImage.url}
+                alt={primaryImage.alt_text || product.name}
                 fill
-                className="object-cover absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                className="object-cover transition-opacity duration-500 group-hover:opacity-0"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
-            )}
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-sxtn-gray-500 font-display text-sm tracking-widest">
-            NO IMAGE
-          </div>
-        )}
-        
-        {/* Badges */}
-        {product.compare_at_price && (
-          <div className="absolute top-2 right-2 bg-white text-black px-2 py-1 text-[10px] font-bold uppercase tracking-widest z-10">
-            Sale
-          </div>
-        )}
-      </div>
+              {secondaryImage && (
+                <Image
+                  src={secondaryImage.url}
+                  alt={secondaryImage.alt_text || product.name}
+                  fill
+                  className="object-cover absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                />
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-sxtn-gray-500 font-display text-sm tracking-widest">
+              NO IMAGE
+            </div>
+          )}
+          
+          {/* Badges */}
+          {product.compare_at_price && (
+            <div className="absolute top-3 left-3 bg-white text-black px-2 py-1 text-[10px] font-bold uppercase tracking-widest z-10">
+              Sale
+            </div>
+          )}
+
+          {/* Bookmark Wishlist Button (Top-Right) */}
+          <WishlistButton
+            productId={product.id}
+            productName={product.name}
+            className="absolute top-2.5 right-2.5"
+            size="sm"
+          />
+        </div>
 
       <div className="pt-2 pb-1 px-2 space-y-1.5">
         <h3 className="font-display text-base sm:text-lg md:text-xl font-bold tracking-tight uppercase text-white leading-snug">
@@ -71,5 +81,6 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
     </Link>
-  );
+  </div>
+);
 }

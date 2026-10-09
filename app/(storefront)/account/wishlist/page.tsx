@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Bookmark, ShoppingBag } from "lucide-react";
+import { useWishlistStore } from "@/lib/stores/wishlist.store";
 
 interface WishlistProduct {
   product_id: string;
@@ -52,6 +53,7 @@ export default function WishlistPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("wishlists").delete().eq("user_id", user.id).eq("product_id", productId);
+    useWishlistStore.getState().removeItem(productId);
     setItems((prev) => prev.filter((i) => i.product_id !== productId));
   };
 
@@ -73,7 +75,7 @@ export default function WishlistPage() {
         <div className="py-20 text-center text-white/30 text-sm">Loading…</div>
       ) : items.length === 0 ? (
         <div className="py-20 text-center border border-white/10">
-          <Heart className="w-8 h-8 text-white/20 mx-auto mb-3" />
+          <Bookmark className="w-8 h-8 text-white/20 mx-auto mb-3" />
           <p className="text-white/30 text-sm mb-4">Your wishlist is empty.</p>
           <Link
             href="/collections/all"
@@ -110,7 +112,7 @@ export default function WishlistPage() {
                     className="absolute top-3 right-3 p-2 bg-black/60 backdrop-blur-sm border border-white/20 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 hover:border-red-500"
                     aria-label="Remove from wishlist"
                   >
-                    <Heart className="w-3.5 h-3.5 fill-current" />
+                    <Bookmark className="w-3.5 h-3.5 fill-current" />
                   </button>
                 </Link>
                 {/* Info */}
