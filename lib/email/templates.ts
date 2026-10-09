@@ -453,7 +453,7 @@ export function getPaymentFailedHtml(params: {
 
     <h2 class="heading" style="text-align: center;">Payment Incomplete</h2>
     <p class="lead" style="text-align: center;">
-      Hello <strong>${recipientName}</strong>, your recent payment attempt was not completed or was declined by the bank. No funds were debited, and your cart items are still saved for you.
+      Hello <strong>${recipientName}</strong>, your recent payment attempt was not completed or was declined by the bank. No funds were debited, and your bag items are still saved for you.
     </p>
 
     ${

@@ -207,7 +207,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
           </div>
         </div>
 
-        {/* Add to Cart */}
+        {/* Add to Bag */}
         <button
           type="button"
           onClick={handleAddToCart}
@@ -222,7 +222,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
               : "bg-white text-black hover:bg-white/90"
           )}
         >
-          {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Cart" : "Add to Cart"}
+          {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Bag" : "Add to Bag"}
         </button>
 
         <div className="mt-12 space-y-8 border-t border-white/10 pt-8">

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -65,13 +65,13 @@ export function CartDrawer() {
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 35 }}
             className="fixed right-0 top-0 bottom-0 z-[80] w-[85%] max-w-md bg-black border-l border-white/10 flex flex-col"
-            aria-label="Shopping cart"
+            aria-label="Shopping bag"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
               <div className="flex items-center gap-3">
                 <h2 className="font-display text-xl uppercase tracking-widest text-white">
-                  Cart
+                  Bag
                 </h2>
                 {items.length > 0 && (
                   <span className="text-xs text-white/40 uppercase tracking-widest">
@@ -82,7 +82,7 @@ export function CartDrawer() {
               <button
                 onClick={closeCart}
                 className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                aria-label="Close cart"
+                aria-label="Close bag"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -121,7 +121,7 @@ export function CartDrawer() {
                 <div className="h-full flex flex-col items-center justify-center text-center gap-4 py-16">
                   <ShoppingBag className="h-14 w-14 text-white/10" />
                   <p className="font-display text-2xl uppercase tracking-widest text-white/60">
-                    Your cart is empty
+                    Your bag is empty
                   </p>
                   <p className="text-white/30 text-sm">Add some pieces to get started.</p>
                   <button

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -21,7 +21,7 @@ export default function CartPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
         <ShoppingBag className="h-16 w-16 text-white/10 mb-6" />
-        <h1 className="font-display text-4xl uppercase tracking-widest mb-4">Your Cart is Empty</h1>
+        <h1 className="font-display text-4xl uppercase tracking-widest mb-4">Your Bag is Empty</h1>
         <p className="text-white/40 text-sm mb-10">Add some pieces to get started.</p>
         <Link
           href="/collections/all"
@@ -36,7 +36,7 @@ export default function CartPage() {
   return (
     <div className="min-h-screen pt-28 pb-32 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       <h1 className="font-display text-4xl sm:text-5xl uppercase tracking-widest mb-12">
-        Your Cart
+        Your Bag
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">

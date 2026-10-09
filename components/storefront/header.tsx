@@ -317,7 +317,7 @@ export function Header() {
               <ProfileDropdown />
               <button
                 onClick={openCart}
-                aria-label={`Cart — ${mounted ? cartCount : 0} items`}
+                aria-label={`Bag — ${mounted ? cartCount : 0} items`}
                 className="relative hover:opacity-70 transition-opacity"
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -368,8 +368,13 @@ export function Header() {
           />
         </Link>
 
-        {/* Right: Cart */}
-        <button onClick={openCart} style={{ pointerEvents: "auto" }} className="relative">
+        {/* Right: Bag */}
+        <button
+          onClick={openCart}
+          style={{ pointerEvents: "auto" }}
+          className="relative"
+          aria-label={`Bag — ${mounted ? cartCount : 0} items`}
+        >
           <ShoppingBag className="h-6 w-6 text-white" />
           {mounted && cartCount > 0 && (
             <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-[10px] font-bold">
@@ -430,8 +435,12 @@ export function Header() {
             </svg>
           </Link>
 
-          {/* Cart */}
-          <button onClick={openCart} className="p-3 text-white/80 hover:text-white transition-colors relative">
+          {/* Bag */}
+          <button
+            onClick={openCart}
+            aria-label={`Bag — ${mounted ? cartCount : 0} items`}
+            className="p-3 text-white/80 hover:text-white transition-colors relative"
+          >
             <ShoppingBag className="h-[22px] w-[22px]" />
             {mounted && cartCount > 0 && (
               <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black text-[10px] font-bold">
