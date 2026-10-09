@@ -9,10 +9,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Redis } from "@upstash/redis";
 
 // ── Types ─────────────────────────────────────────────────────────
+export interface HeroBannerSlide {
+  id: string;
+  desktop_url: string;
+  mobile_url: string;
+  alt_text?: string;
+}
+
 export interface HeroBannerConfig {
   desktop_url: string;
   mobile_url: string;
   alt_text?: string;
+  slides?: HeroBannerSlide[];
   updated_at?: string;
 }
 
@@ -22,17 +30,68 @@ export const DEFAULT_HERO_BANNER: HeroBannerConfig = {
   mobile_url:
     "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=3000&auto=format&fit=crop",
   alt_text: "6XTN Hero",
+  slides: [
+    {
+      id: "1",
+      desktop_url:
+        "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=3000&auto=format&fit=crop",
+      mobile_url:
+        "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=3000&auto=format&fit=crop",
+      alt_text: "6XTN Hero 1",
+    },
+  ],
 };
 
 // ── Safe JSON parser ───────────────────────────────────────────────
 function parseConfig(raw: unknown): HeroBannerConfig | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const obj = raw as Record<string, unknown>;
-  if (typeof obj.desktop_url !== "string" || typeof obj.mobile_url !== "string") return null;
+
+  let slides: HeroBannerSlide[] = [];
+  if (Array.isArray(obj.slides)) {
+    slides = obj.slides
+      .filter((s) => s && typeof s === "object")
+      .map((s, idx) => {
+        const item = s as Record<string, unknown>;
+        const dUrl = typeof item.desktop_url === "string" ? item.desktop_url : "";
+        const mUrl = typeof item.mobile_url === "string" ? item.mobile_url : "";
+        return {
+          id: typeof item.id === "string" && item.id ? item.id : String(idx + 1),
+          desktop_url: dUrl || mUrl,
+          mobile_url: mUrl || dUrl,
+          alt_text: typeof item.alt_text === "string" ? item.alt_text : undefined,
+        };
+      })
+      .filter((s) => s.desktop_url || s.mobile_url);
+  }
+
+  const desktop_url =
+    typeof obj.desktop_url === "string" && obj.desktop_url
+      ? obj.desktop_url
+      : slides[0]?.desktop_url || "";
+  const mobile_url =
+    typeof obj.mobile_url === "string" && obj.mobile_url
+      ? obj.mobile_url
+      : slides[0]?.mobile_url || "";
+
+  if (!desktop_url && !mobile_url && slides.length === 0) return null;
+
+  if (slides.length === 0 && (desktop_url || mobile_url)) {
+    slides = [
+      {
+        id: "1",
+        desktop_url: desktop_url || mobile_url,
+        mobile_url: mobile_url || desktop_url,
+        alt_text: typeof obj.alt_text === "string" ? obj.alt_text : undefined,
+      },
+    ];
+  }
+
   return {
-    desktop_url: obj.desktop_url,
-    mobile_url: obj.mobile_url,
+    desktop_url: desktop_url || slides[0]?.desktop_url || "",
+    mobile_url: mobile_url || slides[0]?.mobile_url || "",
     alt_text: typeof obj.alt_text === "string" ? obj.alt_text : undefined,
+    slides,
     updated_at: typeof obj.updated_at === "string" ? obj.updated_at : undefined,
   };
 }

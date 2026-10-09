@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroBanner } from "@/lib/hero-banner";
+import { HeroBannerSlider } from "@/components/storefront/hero-banner-slider";
 import type { Product, ProductImage } from "@/types/database.types";
 
 type ProductWithCover = Product & { product_images: ProductImage[] };
@@ -27,36 +28,8 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
-      {/* ─── Hero Section ────────────────────────────────────────── */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          {/* Desktop/Tablet Screen View */}
-          <div className="hidden md:block absolute inset-0">
-            <Image
-              src={heroBanner.desktop_url}
-              alt={heroBanner.alt_text || "6XTN Hero"}
-              fill
-              className="object-cover opacity-60"
-              priority
-              sizes="100vw"
-            />
-          </div>
-
-          {/* Mobile Screen View */}
-          <div className="block md:hidden absolute inset-0">
-            <Image
-              src={heroBanner.mobile_url}
-              alt={heroBanner.alt_text || "6XTN Hero"}
-              fill
-              className="object-cover opacity-60"
-              priority
-              sizes="100vw"
-            />
-          </div>
-
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black" />
-        </div>
-      </section>
+      {/* ─── Hero Section with Multi-Image Loop ─────────────────── */}
+      <HeroBannerSlider banner={heroBanner} />
 
 
 
