@@ -186,24 +186,30 @@ export function CartDrawer() {
 
                         {/* Qty controls */}
                         <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center border border-white/20">
-                            <button
-                              onClick={() => updateQty(item.variantId, item.quantity - 1)}
-                              className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-colors"
-                              aria-label="Decrease"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <span className="h-7 w-8 flex items-center justify-center text-xs font-bold text-white">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => updateQty(item.variantId, item.quantity + 1)}
-                              className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-colors"
-                              aria-label="Increase"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </button>
+                          <div className="flex flex-col">
+                            <div className="flex items-center border border-white/20">
+                              <button
+                                onClick={() => updateQty(item.variantId, item.quantity - 1)}
+                                className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+                                aria-label="Decrease"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="h-7 w-8 flex items-center justify-center text-xs font-bold text-white">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQty(item.variantId, item.quantity + 1)}
+                                disabled={item.stock > 0 && item.quantity >= item.stock}
+                                className="h-7 w-7 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                aria-label="Increase"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+                            {item.stock > 0 && item.quantity >= item.stock && (
+                              <span className="text-amber-400 text-[10px] mt-1">Max stock reached</span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-3">

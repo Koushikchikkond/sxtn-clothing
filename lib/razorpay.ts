@@ -178,6 +178,7 @@ export async function calculateVerifiedCartTotal(
       id,
       size,
       color,
+      stock,
       price_override,
       products (
         id,
@@ -213,6 +214,7 @@ export async function calculateVerifiedCartTotal(
     id: string;
     size: string;
     color: string | null;
+    stock: number;
     price_override: number | null;
     products: {
       id: string;
@@ -227,6 +229,25 @@ export async function calculateVerifiedCartTotal(
     variantMap.set(v.id, v);
   }
 
+  // ── Stock validation: check every item BEFORE accepting the order ──
+  const stockErrors: string[] = [];
+  for (const item of items) {
+    const qty = Math.max(1, Number(item.quantity) || 1);
+    const variant = variantMap.get(item.variantId);
+    if (!variant) continue; // handled below as not-found
+    if (variant.stock < qty) {
+      const label = `${variant.products?.name ?? "Item"} (${variant.size})`;
+      stockErrors.push(
+        `"${label}" has only ${variant.stock} left in stock but ${qty} were requested.`
+      );
+    }
+  }
+  if (stockErrors.length > 0) {
+    throw new Error(
+      `Insufficient stock:\n${stockErrors.join("\n")}\nPlease update your bag and try again.`
+    );
+  }
+
   let verifiedSubtotal = 0;
   const verifiedItems: Array<{
     variantId: string;
@@ -235,6 +256,7 @@ export async function calculateVerifiedCartTotal(
     color: string | null;
     price: number;
     quantity: number;
+    stock: number;
   }> = [];
 
   for (const item of items) {
@@ -252,6 +274,7 @@ export async function calculateVerifiedCartTotal(
         color: variant.color,
         price: genuinePrice,
         quantity: qty,
+        stock: variant.stock,
       });
     } else {
       // Variant not found in database: fallback item
@@ -264,6 +287,7 @@ export async function calculateVerifiedCartTotal(
         color: (item as any).color || null,
         price: itemPrice,
         quantity: qty,
+        stock: 0,
       });
     }
   }

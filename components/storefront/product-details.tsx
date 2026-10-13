@@ -44,11 +44,26 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
 
     if (!mounted) return;
 
-    const { useCartStore } = await import("@/lib/stores/cart.store");
-    const addItem = useCartStore.getState().addItem;
+    // Client-side stock guard
+    const availableStock = selectedVariant.stock ?? 0;
+    if (availableStock <= 0) return;
 
-    // Call addItem once per qty unit so the store's increment logic works correctly
-    for (let i = 0; i < qty; i++) {
+    const { useCartStore } = await import("@/lib/stores/cart.store");
+    const cartItems = useCartStore.getState().items;
+    const existingInCart = cartItems.find((i) => i.variantId === selectedVariant.id);
+    const currentInCart = existingInCart?.quantity ?? 0;
+
+    // Cap requested qty to what's actually available beyond what's already in bag
+    const canAdd = Math.max(0, availableStock - currentInCart);
+    if (canAdd === 0) {
+      setSizeError(true);
+      setTimeout(() => setSizeError(false), 2000);
+      return;
+    }
+    const effectiveQty = Math.min(qty, canAdd);
+
+    const addItem = useCartStore.getState().addItem;
+    for (let i = 0; i < effectiveQty; i++) {
       addItem({
         variantId: selectedVariant.id,
         productId: product.id,
@@ -58,6 +73,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
         price: currentPrice,
         size: selectedSize,
         color: selectedVariant.color,
+        stock: availableStock,
       });
     }
 
@@ -181,10 +197,12 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
           </div>
         </div>
 
-        {/* Size error */}
+        {/* Size / stock error */}
         {sizeError && (
           <p className="text-amber-400 text-xs sm:text-sm text-center py-2 mb-3 bg-amber-400/10">
-            Please select a size first
+            {!selectedSize
+              ? "Please select a size first"
+              : "Maximum available stock already in your bag"}
           </p>
         )}
 
@@ -207,13 +225,22 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
             </span>
             <button
               type="button"
-              onClick={() => setQty((q) => Math.min(10, q + 1))}
-              className="h-12 w-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors text-lg touch-manipulation select-none"
+              onClick={() => {
+                const maxQty = selectedVariant ? selectedVariant.stock : 10;
+                setQty((q) => Math.min(maxQty, q + 1));
+              }}
+              disabled={selectedVariant ? qty >= selectedVariant.stock : false}
+              className="h-12 w-12 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors text-lg touch-manipulation select-none disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Increase quantity"
             >
               +
             </button>
           </div>
+          {selectedVariant && selectedVariant.stock > 0 && selectedVariant.stock <= 5 && (
+            <p className="text-amber-400 text-xs mt-2">
+              Only {selectedVariant.stock} left in stock
+            </p>
+          )}
         </div>
 
         {/* Add to Bag */}

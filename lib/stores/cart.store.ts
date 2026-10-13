@@ -11,6 +11,8 @@ export interface CartItem {
   size: string;
   color: string | null;
   quantity: number;
+  /** Available stock from product_variants.stock — stored so the UI can cap quantity without a fresh DB fetch */
+  stock: number;
 }
 
 interface CartStore {
@@ -18,7 +20,7 @@ interface CartStore {
   isOpen: boolean;
 
   // Actions
-  addItem: (item: Omit<CartItem, "quantity">) => void;
+  addItem: (item: Omit<CartItem, "quantity">) => { capped: boolean };
   removeItem: (variantId: string) => void;
   updateQty: (variantId: string, quantity: number) => void;
   clearCart: () => void;
@@ -37,26 +39,31 @@ export const useCartStore = create<CartStore>()(
       isOpen: false,
 
       addItem: (newItem) => {
+        let capped = false;
         set((state) => {
           const existing = state.items.find(
             (i) => i.variantId === newItem.variantId
           );
           if (existing) {
-            // Increment quantity if same variant already in cart
+            const newQty = existing.quantity + 1;
+            const cappedQty = Math.min(newQty, newItem.stock);
+            if (cappedQty < newQty) capped = true;
             return {
               items: state.items.map((i) =>
                 i.variantId === newItem.variantId
-                  ? { ...i, quantity: i.quantity + 1 }
+                  ? { ...i, quantity: cappedQty, stock: newItem.stock }
                   : i
               ),
               isOpen: true,
             };
           }
+          // New item: start at qty 1 (stock must be >= 1 since PDP disables OOS buttons)
           return {
             items: [...state.items, { ...newItem, quantity: 1 }],
             isOpen: true,
           };
         });
+        return { capped };
       },
 
       removeItem: (variantId) => {
@@ -71,9 +78,11 @@ export const useCartStore = create<CartStore>()(
           return;
         }
         set((state) => ({
-          items: state.items.map((i) =>
-            i.variantId === variantId ? { ...i, quantity } : i
-          ),
+          items: state.items.map((i) => {
+            if (i.variantId !== variantId) return i;
+            const cappedQty = Math.min(quantity, i.stock);
+            return { ...i, quantity: cappedQty };
+          }),
         }));
       },
 
@@ -87,8 +96,8 @@ export const useCartStore = create<CartStore>()(
         get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     }),
     {
-      name: "sxtn-cart", // localStorage key
-      partialize: (state) => ({ items: state.items }), // only persist items, not UI state
+      name: "sxtn-cart",
+      partialize: (state) => ({ items: state.items }),
     }
   )
 );

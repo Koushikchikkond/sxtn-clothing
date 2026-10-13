@@ -128,6 +128,24 @@ export async function POST(req: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await adminDb.from("order_items").insert(orderItems as any);
 
+        // ── Decrement stock for each purchased variant ─────────────────
+        // Run all decrements concurrently; log individual errors without failing the order
+        const stockDecrements = verified.items.map(async (item) => {
+          if (!item.variantId) return;
+          const { error: stockErr } = await adminDb.rpc("decrement_variant_stock" as any, {
+            p_variant_id: item.variantId,
+            p_quantity: item.quantity,
+          }).then(() => ({ error: null })).catch((e: unknown) => ({ error: e }));
+
+          if (stockErr) {
+            console.error(
+              `[verify-payment] Failed to decrement stock for variant ${item.variantId}:`,
+              stockErr
+            );
+          }
+        });
+        await Promise.all(stockDecrements);
+
         // Send Order Confirmation & Payment Receipt Email via Resend
         // NOTE: Must be awaited — Vercel serverless kills fire-and-forget tasks
         // on function return, so the email would never be sent without await.
