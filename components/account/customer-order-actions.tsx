@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Ban, CheckCircle2, Loader2, Truck } from "lucide-react";
+import { AlertCircle, Ban, CheckCircle2, Loader2, Truck, ExternalLink } from "lucide-react";
 
 interface CustomerOrderActionsProps {
   orderId: string;
   status: string;
   notes?: string | null;
   total: number;
+  awbNumber?: string | null;
+  courierName?: string | null;
+  trackingUrl?: string | null;
 }
 
 const CUSTOMER_CANCEL_REASONS = [
@@ -25,6 +28,9 @@ export function CustomerOrderActions({
   status,
   notes,
   total,
+  awbNumber,
+  courierName,
+  trackingUrl: initialTrackingUrl,
 }: CustomerOrderActionsProps) {
   const router = useRouter();
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -37,9 +43,10 @@ export function CustomerOrderActions({
   const isCancellable = status === "pending" || status === "paid";
   const isCancelled = status === "cancelled";
 
-  // Parse tracking info if present in notes
-  const isShipped = status === "shipped" || status === "delivered";
-  const hasTracking = notes && (notes.includes("Tracking:") || notes.includes("Courier:"));
+  // Parse tracking info if present in notes or direct fields
+  const isShipped = status === "shipped" || status === "delivered" || status === "confirmed";
+  const hasTracking = !!awbNumber || !!initialTrackingUrl || (notes && (notes.includes("Tracking:") || notes.includes("Courier:")));
+  const trackingLink = initialTrackingUrl || (awbNumber ? `https://shiprocket.co/tracking/${awbNumber}` : null);
 
   async function handleConfirmCancel() {
     setLoading(true);
@@ -106,18 +113,38 @@ export function CustomerOrderActions({
       {/* Shipped / Tracking Banner */}
       {isShipped && hasTracking && (
         <div className="border border-sky-500/30 bg-sky-950/20 p-5 rounded-none">
-          <div className="flex items-start gap-3">
-            <Truck className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-widest font-bold text-sky-400">
-                Shipment & Tracking Details
-              </p>
-              <p className="text-sm text-white/90 font-mono pt-1">{notes}</p>
-              <p className="text-[11px] text-white/50">
-                Courier updates are dispatched to your email from{" "}
-                <span className="font-mono text-white/70">shipping@6xtn.in</span>.
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Truck className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-widest font-bold text-sky-400">
+                  Shipment & Tracking Details
+                </p>
+                {awbNumber ? (
+                  <p className="text-sm text-white/90 pt-0.5">
+                    Courier: <strong className="text-white">{courierName || "Shiprocket Partner"}</strong> &nbsp;·&nbsp;
+                    AWB: <span className="font-mono text-sky-300 font-semibold">{awbNumber}</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-white/90 font-mono pt-1">{notes}</p>
+                )}
+                <p className="text-[11px] text-white/50">
+                  Courier tracking updates are also dispatched to your email from{" "}
+                  <span className="font-mono text-white/70">shipping@6xtn.in</span>.
+                </p>
+              </div>
             </div>
+
+            {trackingLink && (
+              <a
+                href={trackingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 text-xs uppercase tracking-widest font-bold px-4 py-2.5 bg-sky-500 hover:bg-sky-400 text-black transition-colors self-start sm:self-center shrink-0"
+              >
+                Track Shipment <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
           </div>
         </div>
       )}

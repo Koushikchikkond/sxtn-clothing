@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Mail, CheckCircle2, Truck, PackageCheck, Ban, Check, AlertTriangle } from "lucide-react";
+import { Loader2, Mail, CheckCircle2, Truck, PackageCheck, Ban, Check, AlertTriangle, Rocket, ExternalLink } from "lucide-react";
 
 interface OrderStatusManagerProps {
   orderId: string;
   initialStatus: string;
   customerEmail?: string | null;
+  shiprocketOrderId?: string | null;
+  awbNumber?: string | null;
+  courierName?: string | null;
+  trackingUrl?: string | null;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -33,11 +37,24 @@ export function OrderStatusManager({
   orderId,
   initialStatus,
   customerEmail,
+  shiprocketOrderId,
+  awbNumber,
+  courierName: initialCourierName,
+  trackingUrl: initialTrackingUrl,
 }: OrderStatusManagerProps) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [loading, setLoading] = useState(false);
+  const [fulfilling, setFulfilling] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Shiprocket Data state
+  const [shiprocket, setShiprocket] = useState({
+    orderId: shiprocketOrderId || null,
+    awb: awbNumber || null,
+    courier: initialCourierName || null,
+    trackingUrl: initialTrackingUrl || null,
+  });
 
   // Dispatch / Shipping Modal
   const [showShippingModal, setShowShippingModal] = useState(false);
@@ -106,6 +123,52 @@ export function OrderStatusManager({
     }
   }
 
+  async function handleFulfillShiprocket() {
+    if (
+      !window.confirm(
+        "Push this order to Shiprocket? This will automatically create the order in Shiprocket, assign the best courier, generate an AWB number, schedule pickup, and send a tracking email to the customer."
+      )
+    ) {
+      return;
+    }
+
+    setFulfilling(true);
+    setMessage(null);
+
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/fulfill`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fulfill via Shiprocket.");
+      }
+
+      setShiprocket({
+        orderId: String(data.shiprocketOrderId),
+        awb: data.awbCode,
+        courier: data.courierName,
+        trackingUrl: data.trackingUrl,
+      });
+      setStatus("confirmed");
+
+      setMessage({
+        text: `Shiprocket Order Created! Courier: ${data.courierName} | AWB: ${data.awbCode}. Notification email sent to ${customerEmail || "customer"}.`,
+        type: "success",
+      });
+      router.refresh();
+    } catch (err: unknown) {
+      setMessage({
+        text: err instanceof Error ? err.message : "Error pushing to Shiprocket",
+        type: "error",
+      });
+    } finally {
+      setFulfilling(false);
+    }
+  }
+
   const currentCfg = STATUS_CONFIG[status] || { label: status, color: "#666", bg: "#f3f4f6" };
 
   return (
@@ -129,10 +192,42 @@ export function OrderStatusManager({
 
       {/* Action Buttons */}
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+        {/* 1-Click Ship with Shiprocket button */}
+        {!shiprocket.awb && status !== "cancelled" && status !== "delivered" && (
+          <button
+            type="button"
+            disabled={loading || fulfilling}
+            onClick={handleFulfillShiprocket}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "0.72rem",
+              fontWeight: 800,
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              padding: "6px 14px",
+              background: fulfilling ? "#6d28d9" : "#7c3aed",
+              color: "#fff",
+              border: "none",
+              borderRadius: "3px",
+              cursor: fulfilling ? "not-allowed" : "pointer",
+              boxShadow: "0 2px 4px rgba(124, 58, 237, 0.25)",
+            }}
+          >
+            {fulfilling ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Rocket className="w-3.5 h-3.5" />
+            )}
+            {fulfilling ? "Pushing to Shiprocket…" : "Ship with Shiprocket"}
+          </button>
+        )}
+
         {status !== "confirmed" && status !== "shipped" && status !== "delivered" && (
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || fulfilling}
             onClick={() => handleUpdateStatus("confirmed")}
             style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", padding: "6px 12px", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer" }}
           >
@@ -144,19 +239,19 @@ export function OrderStatusManager({
         {status !== "shipped" && status !== "delivered" && (
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || fulfilling}
             onClick={() => setShowShippingModal(true)}
             style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", padding: "6px 12px", background: "#0284c7", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer" }}
           >
             <Truck className="w-3 h-3" />
-            Dispatch / Ship
+            Manual Dispatch
           </button>
         )}
 
         {status !== "delivered" && (
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || fulfilling}
             onClick={() => handleUpdateStatus("delivered")}
             style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", padding: "6px 12px", background: "#10b981", color: "#fff", border: "none", borderRadius: "3px", cursor: "pointer" }}
           >
@@ -168,7 +263,7 @@ export function OrderStatusManager({
         {status !== "cancelled" && status !== "delivered" && (
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || fulfilling}
             onClick={() => setShowCancelModal(true)}
             style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", padding: "6px 12px", background: "#fff", color: "#ef4444", border: "1px solid #ef4444", borderRadius: "3px", cursor: "pointer", marginLeft: "auto" }}
           >
@@ -177,6 +272,101 @@ export function OrderStatusManager({
           </button>
         )}
       </div>
+
+      {/* Shiprocket Fulfilled Details Card */}
+      {shiprocket.awb && (
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "10px 14px",
+            background: "#f5f3ff",
+            border: "1px solid #ddd6fe",
+            borderRadius: "4px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "8px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                background: "#7c3aed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+              }}
+            >
+              <Rocket className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <div style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", color: "#5b21b6", letterSpacing: "0.06em" }}>
+                Shiprocket Active
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#374151" }}>
+                Courier: <strong>{shiprocket.courier || "Assigned"}</strong> &nbsp;|&nbsp; AWB:{" "}
+                <strong style={{ fontFamily: "monospace", letterSpacing: "0.03em" }}>{shiprocket.awb}</strong>
+                {shiprocket.orderId && (
+                  <span style={{ color: "#6b7280", fontSize: "0.72rem" }}> (SR Order #{shiprocket.orderId})</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            {shiprocket.trackingUrl ? (
+              <a
+                href={shiprocket.trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  padding: "5px 10px",
+                  background: "#7c3aed",
+                  color: "#fff",
+                  borderRadius: "3px",
+                  textDecoration: "none",
+                }}
+              >
+                Track on Shiprocket <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <a
+                href={`https://shiprocket.co/tracking/${shiprocket.awb}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  padding: "5px 10px",
+                  background: "#7c3aed",
+                  color: "#fff",
+                  borderRadius: "3px",
+                  textDecoration: "none",
+                }}
+              >
+                Track on Shiprocket <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {loading && (
         <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "#666", marginTop: "10px" }}>

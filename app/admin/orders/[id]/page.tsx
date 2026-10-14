@@ -53,6 +53,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         orderId={(order as any).id}
         initialStatus={(order as any).status}
         customerEmail={(order as any).guest_email || address?.email}
+        shiprocketOrderId={(order as any).shiprocket_order_id}
+        awbNumber={(order as any).awb_number}
+        courierName={(order as any).courier_name}
+        trackingUrl={(order as any).tracking_url}
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>

@@ -86,6 +86,9 @@ export default async function OrderDetailPage({
         status={order.status}
         notes={order.notes}
         total={order.total}
+        awbNumber={(order as any).awb_number}
+        courierName={(order as any).courier_name}
+        trackingUrl={(order as any).tracking_url}
       />
 
       {/* Progress Bar */}
