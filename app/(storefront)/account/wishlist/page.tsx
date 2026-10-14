@@ -88,19 +88,32 @@ export default function WishlistPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12">
           {items.map(({ product_id, products }) => {
             if (!products) return null;
-            const coverImage = [...(products.product_images ?? [])]
-              .sort((a, b) => a.position - b.position)[0];
+            const sortedImages = [...(products.product_images ?? [])].sort(
+              (a, b) => a.position - b.position
+            );
+            const primaryImage = sortedImages[0];
+            const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
             return (
               <div key={product_id} className="group relative">
                 {/* Image */}
                 <Link href={`/products/${products.slug}`} prefetch={true} className="block relative aspect-[3/4] bg-zinc-900 overflow-hidden">
-                  {coverImage ? (
-                    <Image
-                      src={coverImage.url}
-                      alt={products.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                  {primaryImage ? (
+                    <>
+                      <Image
+                        src={primaryImage.url}
+                        alt={products.name}
+                        fill
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
+                      {secondaryImage && (
+                        <Image
+                          src={secondaryImage.url}
+                          alt={products.name}
+                          fill
+                          className="object-cover absolute inset-0 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 group-hover:scale-105"
+                        />
+                      )}
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <ShoppingBag className="w-8 h-8 text-white/20" />

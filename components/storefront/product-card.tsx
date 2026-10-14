@@ -30,7 +30,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 src={primaryImage.url}
                 alt={primaryImage.alt_text || product.name}
                 fill
-                className="object-cover transition-opacity duration-500 group-hover:opacity-0"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
               {secondaryImage && (
@@ -38,7 +38,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   src={secondaryImage.url}
                   alt={secondaryImage.alt_text || product.name}
                   fill
-                  className="object-cover absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  className="object-cover absolute inset-0 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 group-hover:scale-105"
                   sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                 />
               )}

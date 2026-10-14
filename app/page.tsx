@@ -17,7 +17,7 @@ export default async function Home() {
       .from("products")
       .select(`
         id, name, slug, price, compare_at_price,
-        product_images ( id, url, position )
+        product_images ( id, url, alt_text, position )
       `)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -65,8 +65,11 @@ export default async function Home() {
         ) : (
           <div className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12 px-0">
             {products.map((product) => {
-              const cover = [...(product.product_images ?? [])]
-                .sort((a, b) => a.position - b.position)[0];
+              const sortedImages = [...(product.product_images ?? [])].sort(
+                (a, b) => a.position - b.position
+              );
+              const primaryImage = sortedImages[0];
+              const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
 
               return (
                 <div key={product.id} className="group relative flex flex-col gap-3">
@@ -75,13 +78,25 @@ export default async function Home() {
                     className="block"
                   >
                     <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
-                      {cover ? (
-                        <Image
-                          src={cover.url}
-                          alt={product.name}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
+                      {primaryImage ? (
+                        <>
+                          <Image
+                            src={primaryImage.url}
+                            alt={primaryImage.alt_text || product.name}
+                            fill
+                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                          />
+                          {secondaryImage && (
+                            <Image
+                              src={secondaryImage.url}
+                              alt={secondaryImage.alt_text || product.name}
+                              fill
+                              className="object-cover absolute inset-0 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 group-hover:scale-105"
+                              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                            />
+                          )}
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <ShoppingBag className="w-10 h-10 text-white/20" />
