@@ -132,12 +132,13 @@ export async function POST(req: NextRequest) {
         // Run all decrements concurrently; log individual errors without failing the order
         const stockDecrements = verified.items.map(async (item) => {
           if (!item.variantId) return;
-          const { error: stockErr } = await adminDb.rpc("decrement_variant_stock" as any, {
-            p_variant_id: item.variantId,
-            p_quantity: item.quantity,
-          }).then(() => ({ error: null })).catch((e: unknown) => ({ error: e }));
-
-          if (stockErr) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (adminDb.rpc as any)("decrement_variant_stock", {
+              p_variant_id: item.variantId,
+              p_quantity: item.quantity,
+            });
+          } catch (stockErr) {
             console.error(
               `[verify-payment] Failed to decrement stock for variant ${item.variantId}:`,
               stockErr
