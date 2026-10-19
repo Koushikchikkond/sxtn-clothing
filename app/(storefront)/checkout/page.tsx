@@ -387,10 +387,10 @@ export default function CheckoutPage() {
       // Handle payment failure event
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       rzp.on("payment.failed", (failedRes: any) => {
-        console.error("Razorpay payment failed:", failedRes);
+        console.warn("Razorpay payment failed / cancelled:", failedRes);
         setError(
           failedRes?.error?.description ||
-            "Payment failed or was declined. Please try again or use another payment method."
+            "Payment was cancelled or failed. Please try again or use another payment method."
         );
         setLoading(false);
       });
