@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>6XTN — Visual Reactive System Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #09090b;
+      --card-bg: #121215;
+      --card-border: #27272a;
+      --primary: #8b5cf6;
+      --primary-light: #a78bfa;
+      --accent: #06b6d4;
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --code-bg: #18181b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: rgba(18, 18, 21, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: #fff;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      background: #18181b;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      overflow-x: auto;
+      max-width: 65vw;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Container */
+    main {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .section-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+
+    /* Diagram Card */
+    .diagram-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 2.5rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .diagram-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .mermaid {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .mermaid svg {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+
+    /* Info Grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .info-card {
+      background: rgba(24, 24, 27, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+
+    .info-card h4 {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .info-card p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .info-card code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #38bdf8;
+    }
+
+    /* Hide unselected tabs */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Instructions callout */
+    .tip-banner {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tip-banner span {
+      font-size: 0.85rem;
+      color: #ddd6fe;
+    }
+
+    .tip-banner strong {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand-wrap">
+      <span class="brand-logo">6XTN</span>
+      <span class="status-badge">System Architecture Visualizer</span>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-overview')">1. System Context</button>
+      <button class="tab-btn" onclick="switchTab('tab-payments')">2. Payment Pipeline</button>
+      <button class="tab-btn" onclick="switchTab('tab-inventory')">3. Concurrency Guard</button>
+      <button class="tab-btn" onclick="switchTab('tab-shipping')">4. Shiprocket Engine</button>
+      <button class="tab-btn" onclick="switchTab('tab-client')">5. Reactive Client</button>
+      <button class="tab-btn" onclick="switchTab('tab-security')">6. Security & RBAC</button>
+      <button class="tab-btn" onclick="switchTab('tab-erd')">7. Database ERD</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Live Mode Info Callout -->
+    <div class="tip-banner">
+      <span>💡 <strong>Interactive Visual Mode:</strong> Every diagram below is rendered directly from your system architecture specification using dynamic SVG graphics.</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #a1a1aa;">Source: SYSTEM_DESIGN.md</span>
+    </div>
+
+    <!-- ──────────────── TAB 1: SYSTEM OVERVIEW ──────────────── -->
+    <div id="tab-overview" class="tab-content active">
+      <div class="section-header">
+        <h2 class="section-title">🌐 1. High-Level System Context & Architecture</h2>
+        <p class="section-desc">
+          Complete end-to-end map of the 6XTN platform showing how the frontend browser client, edge middleware, backend APIs, Supabase cloud database, and external providers (Razorpay, Shiprocket, Resend, Cloudflare R2) communicate.
+        </p>
+      </div>
+
+      <div class="diagram-card">
+        <div class="mermaid">
+flowchart TB
+    subgraph ClientLayer["Frontend Client Layer (Browser)"]
+        UI["Next.js 16 Storefront & Admin UI<br/>(React 19 + Tailwind v4 + Framer Motion)"]
+        ZCart["Zustand Cart Store<br/>(Local Storage + Stock Guards)"]
+        ZWish["Zustand Wishlist Store<br/>(Guest Mode + Account Sync)"]
+        RModal["Razorpay Standard Checkout SDK<br/>(checkout.js)"]
+    end
+
+    subgraph EdgeLayer["Edge / Routing Layer (Next.js & Vercel)"]
+        MW["Next.js Middleware<br/>(Route Protection & Token Check)"]
+        RL["Upstash Redis Rate Limiter<br/>(Sliding Window Token Bucket)"]
+    end
+
+    subgraph ServerLayer["Backend API & Server Actions (Node.js)"]
+        API_Checkout["/api/create-order<br/>& /api/verify-payment"]
+        API_Shiprocket["/api/admin/orders/:id/fulfill<br/>(Shiprocket Dispatcher)"]
+        API_Upload["/api/upload<br/>(Cloudflare R2 S3 Upload)"]
+        WH_Razorpay["/api/webhooks/razorpay<br/>(Payment Fallback Capture)"]
+        WH_Shiprocket["/api/webhooks/shiprocket<br/>(Realtime Courier Tracking)"]
+    end
+
+    subgraph CloudServices["External Third-Party Ecosystem"]
+        RP["Razorpay Live Gateway<br/>(UPI / Cards / Netbanking)"]
+        SR["Shiprocket Logistics Core<br/>(Delhivery / Bluedart / DTDC)"]
+        RS["Resend Transactional Email<br/>(orders@6xtn.in / shipping@6xtn.in)"]
+        R2["Cloudflare R2 Bucket<br/>(High-Speed CDN Asset Delivery)"]
+    end
+
+    subgraph DatabaseLayer["Data & Persistence Layer (Supabase Postgres)"]
+        DB[(PostgreSQL 15+ Engine)]
+        RLS["Row Level Security Policies"]
+        RPC["Atomic Stored Procedures<br/>(decrement_variant_stock)"]
+        Auth["Supabase GoTrue Auth<br/>(JWT + Session Cookie)"]
+    end
+
+    UI --> MW
+    MW --> RL
+    RL --> ServerLayer
+
+    ZCart --> UI
+    ZWish --> UI
+    UI --> RModal
+
+    API_Checkout --> DB
+    API_Checkout --> RP
+    API_Checkout --> RPC
+    API_Checkout --> RS
+
+    RModal --> RP
+    RP -.->|Async Webhook| WH_Razorpay
+    WH_Razorpay --> DB
+
+    API_Shiprocket --> SR
+    SR -.->|Status Webhooks| WH_Shiprocket
+    WH_Shiprocket --> DB
+    WH_Shiprocket --> RS
+
+    API_Upload --> R2
+
+    ServerLayer --> Auth
+    ServerLayer --> RLS
+    RLS --> DB
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <h4>Edge Middleware</h4>
+          <p>Intercepts incoming traffic and applies an Upstash Redis sliding window limiter on <code>/api/checkout</code> and auth routes to stop DDoS bots.</p>
+        </div>
+        <div class="info-card">
+          <h4>Database Architecture</h4>
+          <p>PostgreSQL 15 on Supabase with strict Row Level Security (RLS) policies and atomic PL/pgSQL stored procedures.</p>
+        </div>
+        <div class="info-card">
+          <h4>Asynchronous Webhooks</h4>
+          <p>Dual webhook receivers for Razorpay (financial reconciliation) and Shiprocket (real-time package transit milestones).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────── TAB 2: PAYMENTS PIPELINE ──────────────── -->
+    <div id="tab-payments" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">💳 2. Order & Payment Reactive Pipeline</h2>
+        <p class="section-desc">
+          Sequence of events from when a customer clicks "Pay" to backend price verification, Razorpay order generation, HMAC-SHA256 signature verification, and atomic stock deduction.
+        </p>
+      </div>
+
+      <div class="diagram-card">
+        <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Customer as Customer Browser
+    participant Checkout as /checkout Page
+    participant CreateOrder as /api/create-order
+    participant Razorpay as Razorpay Live Gateway
+    participant VerifyPayment as /api/verify-payment
+    participant Postgres as Supabase PostgreSQL
+    participant StockRPC as RPC: decrement_variant_stock
+    participant Resend as Resend Email Service
+
+    Customer->>Checkout: Clicks "Pay & Place Order"
+    Checkout->>CreateOrder: POST { items, address, guestEmail }
+    
+    rect rgb(24, 24, 27)
+        Note over CreateOrder,Postgres: Server-Side Price & Stock Verification
+        CreateOrder->>Postgres: Query product_variants & products
+        Postgres-->>CreateOrder: Returns active price & available stock
+        Note over CreateOrder: Recalculates subtotal + shippingFee
+        Note over CreateOrder: Verifies: item.quantity <= variant.stock
+    end
+
+    CreateOrder->>Razorpay: orders.create({ amount: verifiedTotalInPaise, currency: "INR" })
+    Razorpay-->>CreateOrder: Returns { razorpay_order_id, amount }
+    CreateOrder-->>Checkout: Returns { orderId, amount, currency }
+
+    Checkout->>Razorpay: Opens Razorpay Standard Modal (checkout.js)
+    Customer->>Razorpay: Authorizes Payment via UPI / Card / Netbanking
+    Razorpay-->>Checkout: Returns { razorpay_payment_id, razorpay_order_id, razorpay_signature }
+
+    Checkout->>VerifyPayment: POST { order_id, payment_id, signature, items, address, total }
+
+    rect rgb(24, 24, 27)
+        Note over VerifyPayment: Cryptographic HMAC Signature Verification
+        VerifyPayment->>VerifyPayment: HMAC-SHA256(order_id + "|" + payment_id, RAZORPAY_KEY_SECRET)
+        Note over VerifyPayment: Compares generated digest === received signature
+    end
+
+    alt Signature Matches
+        VerifyPayment->>Postgres: INSERT into public.orders (status: 'paid')
+        VerifyPayment->>Postgres: INSERT into public.order_items (line items)
+        
+        loop For Each Purchased Variant
+            VerifyPayment->>StockRPC: SELECT decrement_variant_stock(variantId, quantity)
+            StockRPC->>Postgres: UPDATE product_variants SET stock = GREATEST(0, stock - qty)
+        end
+
+        VerifyPayment->>Resend: sendOrderConfirmationEmail(customerEmail, orderDetails)
+        VerifyPayment-->>Checkout: Returns { success: true, orderId }
+        Checkout-->>Customer: Redirects to /order-success?order_id=XXX
+    else Signature Invalid
+        VerifyPayment-->>Checkout: Returns 400 Bad Signature (Order rejected)
+    end
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <h4>Zero-Trust Client Pricing</h4>
+          <p>Frontend prices are completely ignored during order creation. <code>/api/create-order</code> queries live PostgreSQL prices and computes the true mathematical sum.</p>
+        </div>
+        <div class="info-card">
+          <h4>HMAC-SHA256 Integrity</h4>
+          <p>Orders cannot be forged. Razorpay's cryptographic signature must match <code>order_id + "|" + payment_id</code> hashed with <code>RAZORPAY_KEY_SECRET</code>.</p>
+        </div>
+        <div class="info-card">
+          <h4>Fallback Webhook</h4>
+          <p>If the user closes their browser right after paying, <code>/api/webhooks/razorpay</code> receives the asynchronous event and writes the order automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────── TAB 3: INVENTORY GUARD ──────────────── -->
+    <div id="tab-inventory" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">🛡️ 3. Atomic Inventory Concurrency Guard</h2>
+        <p class="section-desc">
+          How race conditions, double-orders, and overselling are eliminated during high-traffic drops using a 3-layer guard and PostgreSQL row locks.
+        </p>
+      </div>
+
+      <div class="diagram-card">
+        <div class="mermaid">
+flowchart TD
+    subgraph Layer1["Layer 1: Frontend Guard (Zustand Store)"]
+        A[Customer selects quantity] --> B{Qty <= Available Stock?}
+        B -- Yes --> C[Added to Bag Store]
+        B -- No --> D[Capped at max available stock]
+    end
+
+    subgraph Layer2["Layer 2: Server Verification Guard (/api/create-order)"]
+        E[Customer clicks Checkout] --> F[calculateVerifiedCartTotal]
+        F --> G[(Query DB Variants Stock)]
+        G --> H{Requested Qty <= DB Stock?}
+        H -- No --> I[Abort: 400 Out of Stock Error]
+        H -- Yes --> J[Generate Razorpay Order]
+    end
+
+    subgraph Layer3["Layer 3: Atomic Stored Procedure Guard (decrement_variant_stock)"]
+        K[Payment Verified Successfully] --> L[Call RPC: decrement_variant_stock]
+        L --> M["BEGIN TRANSACTION<br/>SELECT stock FROM product_variants WHERE id = p_variant_id FOR UPDATE"]
+        M --> N["UPDATE product_variants<br/>SET stock = GREATEST(0, stock - p_quantity)<br/>WHERE id = p_variant_id"]
+        N --> O[(CHECK constraint: stock >= 0)]
+        O -- Passed --> P[COMMIT TRANSACTION: Stock Safely Deducted]
+        O -- Failed --> Q[ROLLBACK: Transaction Aborted]
+    end
+
+    Layer1 --> Layer2
+    Layer2 --> Layer3
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <h4>Row-Level Locks</h4>
+          <p>The stored procedure uses row locks so multiple simultaneous buyers of the same size are processed in strict atomic sequence.</p>
+        </div>
+        <div class="info-card">
+          <h4>Database Constraint Net</h4>
+          <p>Even in an unexpected edge case, the database engine schema has <code>CHECK (stock >= 0)</code>, making it mathematically impossible for stock to become negative.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────── TAB 4: SHIPROCKET LOGISTICS ──────────────── -->
+    <div id="tab-shipping" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">🚚 4. Automated Logistics & Shipping Engine (Shiprocket)</h2>
+        <p class="section-desc">
+          1-click fulfillment flow from the Admin dashboard through Shiprocket courier assignment, AWB generation, pickup scheduling, and live tracking webhooks.
+        </p>
+      </div>
+
+      <div class="diagram-card">
+        <div class="mermaid">
+flowchart LR
+    subgraph AdminActions["Admin Dashboard (1-Click Fulfillment)"]
+        AdminOrder["Admin views Order #ID (status: paid)"]
+        BtnFulfill["Click 'Ship with Shiprocket'"]
+    end
+
+    subgraph FulfillmentFlow["/api/admin/orders/:id/fulfill"]
+        API1["1. Authenticate with Shiprocket API<br/>(9-day cached JWT token)"]
+        API2["2. POST /orders/create/adhoc<br/>(Customer Address + SKUs + Parcel Dimensions)"]
+        API3["3. POST /courier/assign/awb<br/>(Auto-assigns best rated courier)"]
+        API4["4. POST /courier/generate/pickup<br/>(Schedules pickup at warehouse)"]
+        API5["5. Update Supabase Orders Table<br/>(status: confirmed, awb_number, tracking_url)"]
+        API6["6. Send Resend Confirmation Email<br/>(Includes Live AWB Tracking link)"]
+    end
+
+    subgraph CourierLifecycle["Shiprocket Webhook Lifecycle (/api/webhooks/shiprocket)"]
+        WH1["Event: Picked Up (Status 7)"] --> WH_Log["Update order notes"]
+        WH2["Event: Out for Delivery (Status 17)"] --> WH_Ship["Status -> 'shipped'<br/>Send Out for Delivery Email"]
+        WH3["Event: Delivered (Status 9)"] --> WH_Del["Status -> 'delivered'<br/>Send Delivery Success Email"]
+        WH4["Event: RTO / Undelivered (Status 14/10)"] --> WH_Alert["Log alert in notes for Admin"]
+    end
+
+    AdminOrder --> BtnFulfill
+    BtnFulfill --> API1
+    API1 --> API2 --> API3 --> API4 --> API5 --> API6
+    API4 -.-> CourierLifecycle
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <h4>Token Caching</h4>
+          <p>Shiprocket JWT tokens are cached in memory for 9 days (valid for 10) to eliminate redundant login roundtrips.</p>
+        </div>
+        <div class="info-card">
+          <h4>Automated Courier Choice</h4>
+          <p>Shiprocket's CORE engine automatically picks the fastest and highest-rated courier (Bluedart, Delhivery, etc.) for the customer's pincode.</p>
+        </div>
+        <div class="info-card">
+          <h4>Customer Tracking Portal</h4>
+          <p>Orders store direct tracking URLs (<code>https://shiprocket.co/tracking/:awb</code>) rendered in the customer's account order view and emails.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────── TAB 5: REACTIVE CLIENT ──────────────── -->
+    <div id="tab-client" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">⚡ 5. Client-Side Reactive State Machine</h2>
+        <p class="section-desc">
+          How Zustand handles local state hydration, stock checking, guest bookmarks, and automatic cloud account sync upon login.
+        </p>
+      </div>
+
+      <div class="diagram-card">
+        <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as Customer
+    participant UI as Product Details / Catalog
+    participant CartStore as Zustand Cart Store (cart.store.ts)
+    participant WishStore as Zustand Wishlist Store (wishlist.store.ts)
+    participant LocalStorage as Local Storage Cache
+    participant Supabase as Supabase API
+
+    User->>UI: Selects Size & Clicks "Add to Bag"
+    UI->>CartStore: addItem(product, variant, requestedQty, dbStock)
+    Note over CartStore: Validates: currentQty + requestedQty <= dbStock
+    alt Exceeds Available Stock
+        CartStore-->>UI: Caps quantity, returns { added: false, capped: true }
+        UI-->>User: Visual warning: "Only X pieces available"
+    else Stock Available
+        CartStore->>LocalStorage: Persists updated items array
+        CartStore-->>UI: Reactive update: opens Bag Drawer + badge counter
+    end
+
+    User->>UI: Clicks Bookmark / Wishlist Icon
+    UI->>WishStore: toggle(productId)
+    alt User is Guest
+        WishStore->>LocalStorage: Persists wishlist item IDs
+        WishStore-->>UI: Toast: "Saved to Wishlist • Sign in to sync"
+    else User is Logged In
+        WishStore->>Supabase: INSERT / DELETE on public.wishlists
+        WishStore->>LocalStorage: Persists synced cache
+        WishStore-->>UI: Toast: "Saved to Wishlist"
+    end
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────── TAB 6: SECURITY & RBAC ──────────────── -->
+    <div id="tab-security" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">🔒 6. Security, Rate Limiting & Access Control (RBAC)</h2>
+        <p class="section-desc">
+          How edge middleware, Upstash Redis rate limiting, Supabase authentication, and PostgreSQL Row-Level Security guard admin endpoints.
+        </p>
+      </div>
+
+      <div class="diagram-card">
+        <div class="mermaid">
+flowchart TD
+    subgraph Ingress["Incoming HTTP Request"]
+        Req["Request to /api/* or /admin/*"]
+    end
+
+    subgraph RateLimiting["Upstash Redis Sliding Window Limiter"]
+        RL_Check{Rate limit exceeded?}
+        RL_Check -- Yes --> HTTP_429["Return 429 Too Many Requests"]
+        RL_Check -- No --> Pass_RL["Pass to Route Handler"]
+    end
+
+    subgraph AuthRBAC["Role-Based Access Control"]
+        Auth_Check{Is Authenticated?}
+        Auth_Check -- No --> Redir_Login["Redirect /login or 401 Unauthorized"]
+        Auth_Check -- Yes --> Role_Check{profiles.role == 'admin'?}
+        Role_Check -- No --> Forbidden["403 Forbidden / Redirect to Homepage"]
+        Role_Check -- Yes --> Admin_Access["Full Access to Admin Operations"]
+    end
+
+    subgraph PostgresRLS["PostgreSQL Row Level Security (RLS)"]
+        RLS_Public["Public: Read-only active products & categories"]
+        RLS_Customer["Customer: Read/write own cart, addresses, wishlist, and orders"]
+        RLS_Admin["Admin: Full CRUD on all tables via public.is_admin() or service_role"]
+    end
+
+    Req --> RL_Check
+    Pass_RL --> Auth_Check
+    Admin_Access --> PostgresRLS
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────────── TAB 7: DATABASE ERD ──────────────── -->
+    <div id="tab-erd" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">🗄️ 7. Database Entity Relationship Diagram (ERD)</h2>
+        <p class="section-desc">
+          Complete relational schema of the Supabase PostgreSQL database mapping all tables, primary keys, foreign keys, and status enums.
+        </p>
+      </div>
+
+      <div class="diagram-card">
+        <div class="mermaid">
+erDiagram
+    PROFILES ||--o{ ORDERS : places
+    PROFILES ||--o{ ADDRESSES : owns
+    PROFILES ||--o{ WISHLISTS : saves
+    CATEGORIES ||--o{ PRODUCTS : categorizes
+    PRODUCTS ||--|{ PRODUCT_IMAGES : displays
+    PRODUCTS ||--|{ PRODUCT_VARIANTS : stocks
+    PRODUCTS ||--o{ WISHLISTS : referenced_in
+    ORDERS ||--|{ ORDER_ITEMS : contains
+    PRODUCT_VARIANTS ||--o{ ORDER_ITEMS : fulfills
+
+    PROFILES {
+        uuid id PK
+        text full_name
+        text phone
+        text avatar_url
+        text role "customer | admin"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    CATEGORIES {
+        uuid id PK
+        text name
+        text slug UK
+        text image_url
+        int position
+        timestamptz created_at
+    }
+
+    PRODUCTS {
+        uuid id PK
+        uuid category_id FK
+        text name
+        text slug UK
+        text description
+        numeric price
+        numeric compare_at_price
+        boolean is_active
+        text_array tags
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    PRODUCT_IMAGES {
+        uuid id PK
+        uuid product_id FK
+        text url
+        text alt_text
+        int position
+    }
+
+    PRODUCT_VARIANTS {
+        uuid id PK
+        uuid product_id FK
+        text size "S | M | L | XL | XXL"
+        text color
+        text sku UK
+        int stock "check (stock >= 0)"
+        numeric price_override
+        timestamptz created_at
+    }
+
+    ORDERS {
+        uuid id PK
+        uuid user_id FK "nullable for guests"
+        text guest_email
+        text status "pending | paid | confirmed | shipped | delivered | cancelled"
+        numeric subtotal
+        numeric shipping_fee
+        numeric total
+        text currency "INR"
+        jsonb shipping_address
+        text razorpay_order_id
+        text razorpay_payment_id
+        text razorpay_signature
+        text shiprocket_order_id
+        text shiprocket_shipment_id
+        text awb_number
+        text courier_name
+        text tracking_url
+        text notes
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        uuid variant_id FK
+        text product_name
+        text size
+        text color
+        numeric unit_price
+        int quantity
+        timestamptz created_at
+    }
+
+    ADDRESSES {
+        uuid id PK
+        uuid user_id FK
+        text full_name
+        text phone
+        text line1
+        text line2
+        text city
+        text state
+        text pincode
+        text country
+        boolean is_default
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    WISHLISTS {
+        uuid id PK
+        uuid user_id FK
+        uuid product_id FK
+        timestamptz created_at
+    }
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Initialize Mermaid with Dark Luxury Theme
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#121215',
+        primaryColor: '#7c3aed',
+        primaryTextColor: '#ffffff',
+        primaryBorderColor: '#a78bfa',
+        lineColor: '#38bdf8',
+        secondaryColor: '#0e7490',
+        tertiaryColor: '#1e1b4b',
+        fontFamily: 'Space Grotesk, system-ui, sans-serif'
+      },
+      flowchart: {
+        curve: 'basis',
+        padding: 24,
+        nodeSpacing: 50,
+        rankSpacing: 50
+      },
+      sequence: {
+        actorMargin: 50,
+        boxMargin: 10,
+        boxTextMargin: 5,
+        noteMargin: 10,
+        messageMargin: 35
+      }
+    });
+
+    // Tab switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+
+      event.target.classList.add('active');
+      const activeTab = document.getElementById(tabId);
+      if (activeTab) {
+        activeTab.classList.add('active');
+      }
+    }
+  </script>
+</body>
+</html>
