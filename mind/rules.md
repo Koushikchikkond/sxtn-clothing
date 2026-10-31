@@ -1,7 +1,15 @@
 # Rules — SXTN Development Conventions
 
-These rules apply to any human or AI agent (Claude Code, etc.) working on
+These rules apply to any human or AI agent (Claude Code, Antigravity, etc.) working on
 this repo. Read `PRD.md` and `architecture.md` before writing code.
+
+## 0. Obsidian Task Logging (MANDATORY FOR ALL AI AGENTS)
+For **every** task, feature, or bug fix requested by the user:
+1. **Create a dedicated task file** in `mind/tasks/YYYY-MM-DD-<slug>.md` using the schema in `mind/tasks/_template.md`.
+2. Set YAML frontmatter with `status: in-progress` and relevant tags (`task`, `storefront`, `admin`, `db`, etc.).
+3. Break down the user prompt into an actionable Markdown checklist (`- [ ]`).
+4. Cross-link relevant files using Obsidian wikilinks (e.g., `[[PRD]]`, `[[architecture]]`, `[[rules]]`).
+5. Upon completing the work, update `status: completed`, check off items (`- [x]`), list the modified files under `## Changes Made`, and add a link to `mind/tasks/README.md`.
 
 ## 1. General Principles
 - Ship in the order defined in `BUILD_PROMPT.md`. Don't jump ahead to admin

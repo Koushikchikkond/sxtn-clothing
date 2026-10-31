@@ -3,9 +3,6 @@ import type { NextRequest } from "next/server";
 import { apiRateLimit, authRateLimit, checkoutRateLimit } from "@/lib/rate-limit";
 
 function getIdentifier(req: NextRequest): string {
-  const userId = req.cookies.get("sb-user-id")?.value;
-  if (userId) return `user:${userId}`;
-
   const ip =
     (req as any).ip ??
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

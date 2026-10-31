@@ -69,7 +69,8 @@ export async function POST(req: NextRequest) {
     const dotIdx = file.name.lastIndexOf(".");
     const ext = dotIdx !== -1 ? file.name.slice(dotIdx).toLowerCase() : ".jpg";
     const uuid = crypto.randomUUID();
-    const folder = productSlug ? `products/${productSlug}` : "uploads";
+    const safeSlug = productSlug ? productSlug.replace(/[^a-z0-9_-]/gi, "") : null;
+    const folder = safeSlug ? `products/${safeSlug}` : "uploads";
     const key = `${folder}/${uuid}${ext}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());

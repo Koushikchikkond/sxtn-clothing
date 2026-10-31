@@ -149,10 +149,15 @@ export async function POST(req: NextRequest) {
           if (!item.variantId) return;
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (adminDb.rpc as any)("decrement_variant_stock", {
+            const { data: success } = await (adminDb.rpc as any)("decrement_variant_stock", {
               p_variant_id: item.variantId,
               p_quantity: item.quantity,
             });
+            if (success === false) {
+              console.warn(
+                `[verify-payment] Warning: Variant stock insufficient during decrement for variant ${item.variantId}`
+              );
+            }
           } catch (stockErr) {
             console.error(
               `[verify-payment] Failed to decrement stock for variant ${item.variantId}:`,

@@ -99,6 +99,37 @@ export async function POST(req: NextRequest) {
                 `[Razorpay Webhook] Order ${order.id} marked as paid via webhook`
               );
 
+              // ── Decrement stock for each purchased variant ─────────────────
+              if (
+                order.order_items &&
+                Array.isArray(order.order_items) &&
+                order.order_items.length > 0
+              ) {
+                const stockDecrements = order.order_items.map(async (item: any) => {
+                  if (!item.variant_id || !item.quantity) return;
+                  try {
+                    const { data: success } = await (supabase.rpc as any)(
+                      "decrement_variant_stock",
+                      {
+                        p_variant_id: item.variant_id,
+                        p_quantity: item.quantity,
+                      }
+                    );
+                    if (success === false) {
+                      console.warn(
+                        `[Razorpay Webhook] Variant stock insufficient during decrement for variant ${item.variant_id}`
+                      );
+                    }
+                  } catch (stockErr) {
+                    console.error(
+                      `[Razorpay Webhook] Failed to decrement stock for variant ${item.variant_id}:`,
+                      stockErr
+                    );
+                  }
+                });
+                await Promise.all(stockDecrements);
+              }
+
               // Trigger order confirmation email if customer email exists
               // NOTE: Must await — Vercel serverless kills fire-and-forget on function return
               const customerEmail =

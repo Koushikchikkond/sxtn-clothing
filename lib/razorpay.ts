@@ -248,6 +248,11 @@ export async function calculateVerifiedCartTotal(
     const variant = variantMap.get(item.variantId);
 
     if (variant && variant.products) {
+      if (!variant.products.is_active) {
+        throw new Error(
+          `Product "${variant.products.name}" is currently unavailable or unlisted.`
+        );
+      }
       // Prioritize price_override if set on variant, otherwise product base price
       const genuinePrice = variant.price_override ?? variant.products.price;
       verifiedSubtotal += genuinePrice * qty;
