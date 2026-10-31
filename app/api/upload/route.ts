@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadToR2 } from "@/lib/r2";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -8,8 +8,13 @@ export const dynamic = "force-dynamic";
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 
-/** GET /api/upload — Diagnostic health check */
+/** GET /api/upload — Diagnostic health check (Admin only) */
 export async function GET() {
+  const auth = await requireAdmin();
+  if (!auth.isAdmin) {
+    return auth.errorResponse!;
+  }
+
   const accountId = Boolean(process.env.CLOUDFLARE_ACCOUNT_ID?.trim());
   const accessKeyId = Boolean(process.env.R2_ACCESS_KEY_ID?.trim());
   const secretAccessKey = Boolean(process.env.R2_SECRET_ACCESS_KEY?.trim());
@@ -35,22 +40,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    // Auth Check
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        return NextResponse.json(
-          { error: "Unauthorized. Please log in to admin first." },
-          { status: 401 }
-        );
-      }
-    } catch (authError) {
-      console.warn("[upload] Auth check warning:", authError);
-      // Admin layout protects pages, so continue if auth check encountered cookie parse quirks
+    const auth = await requireAdmin();
+    if (!auth.isAdmin) {
+      return auth.errorResponse!;
     }
 
     const formData = await req.formData();

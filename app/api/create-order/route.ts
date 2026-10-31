@@ -22,22 +22,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { amount, currency = "INR", receipt, notes, items } = body;
+    const { currency = "INR", receipt, notes, items } = body;
 
-    let targetAmountInPaise = 0;
-
-    // Security Anti-Tampering Check:
-    // If the request supplies cart items, recalculate the genuine total from the database
-    // to prevent users from manipulating prices in Developer Tools.
-    if (items && Array.isArray(items) && items.length > 0) {
-      const verified = await calculateVerifiedCartTotal(items);
-      targetAmountInPaise = Math.round(verified.total * 100);
-    } else if (typeof amount === "number") {
-      targetAmountInPaise = Math.round(amount);
-    } else if (typeof body.total === "number") {
-      // If client sent total in rupees:
-      targetAmountInPaise = Math.round(body.total * 100);
+    // Security Anti-Tampering Requirement:
+    // Every order must supply cart items so the server recalculates the genuine
+    // database price and prevents client price manipulation.
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: "Cart items are required to create an order." },
+        { status: 400 }
+      );
     }
+
+    const verified = await calculateVerifiedCartTotal(items);
+    const targetAmountInPaise = Math.round(verified.total * 100);
 
     // Minimum order amount requirement: 100 paise (₹1.00)
     if (!targetAmountInPaise || targetAmountInPaise < 100) {

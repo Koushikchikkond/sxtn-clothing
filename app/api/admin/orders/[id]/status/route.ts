@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderStatusEmail } from "@/lib/email/resend";
 import { createRazorpayRefund } from "@/lib/razorpay";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.isAdmin) {
+      return auth.errorResponse!;
+    }
+
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const { status, trackingNumber, courierName, trackingUrl, reason, notes, autoRefund } = body;
@@ -73,6 +79,22 @@ export async function POST(
         { error: "Failed to update order status in database." },
         { status: 500 }
       );
+    }
+
+    // 2.1 Restore stock on cancellation
+    if (status === "cancelled" && order.status !== "cancelled" && order.order_items?.length) {
+      const restocks = order.order_items.map(async (item: any) => {
+        if (!item.variant_id || !item.quantity) return;
+        try {
+          await (supabase.rpc as any)("increment_variant_stock", {
+            p_variant_id: item.variant_id,
+            p_quantity: item.quantity,
+          });
+        } catch (restockErr) {
+          console.warn(`[admin status] Restock warning for variant ${item.variant_id}:`, restockErr);
+        }
+      });
+      await Promise.all(restocks);
     }
 
     // 3. Trigger transactional email via Resend if status is one of the notification milestones

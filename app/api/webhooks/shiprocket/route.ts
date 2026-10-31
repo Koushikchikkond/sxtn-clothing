@@ -25,6 +25,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderStatusEmail } from "@/lib/email/resend";
 
@@ -59,19 +60,29 @@ const SR_STATUS_MAP: Record<
 export async function POST(req: NextRequest) {
   try {
     // ── 1. Token verification ──────────────────────────────────────────────
-    // Shiprocket sends the webhook token in the Authorization header or as a
-    // query parameter. We check both.
     const webhookToken = process.env.SHIPROCKET_WEBHOOK_TOKEN;
 
-    if (webhookToken) {
-      const authHeader = req.headers.get("authorization") || "";
-      const queryToken = req.nextUrl.searchParams.get("token") || "";
-      const receivedToken = authHeader.replace(/^Bearer\s+/i, "") || queryToken;
+    if (!webhookToken) {
+      console.warn("[Shiprocket Webhook] SHIPROCKET_WEBHOOK_TOKEN is not configured on server.");
+      return NextResponse.json(
+        { error: "Webhook token not configured on server" },
+        { status: 500 }
+      );
+    }
 
-      if (receivedToken !== webhookToken) {
-        console.warn("[Shiprocket Webhook] Invalid token received.");
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    const authHeader = req.headers.get("authorization") || "";
+    const queryToken = req.nextUrl.searchParams.get("token") || "";
+    const receivedToken = authHeader.replace(/^Bearer\s+/i, "") || queryToken;
+
+    const bufReceived = Buffer.from(receivedToken);
+    const bufExpected = Buffer.from(webhookToken);
+
+    if (
+      bufReceived.length !== bufExpected.length ||
+      !crypto.timingSafeEqual(bufReceived, bufExpected)
+    ) {
+      console.warn("[Shiprocket Webhook] Invalid token received.");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // ── 2. Parse payload ───────────────────────────────────────────────────

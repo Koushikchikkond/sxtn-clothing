@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fulfillOrder, buildShiprocketPayload } from "@/lib/shiprocket";
 import { sendOrderStatusEmail } from "@/lib/email/resend";
+import { requireAdmin } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin();
+    if (!auth.isAdmin) {
+      return auth.errorResponse!;
+    }
+
     const { id } = await params;
     const supabase = createAdminClient();
 

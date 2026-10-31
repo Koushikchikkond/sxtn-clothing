@@ -190,24 +190,8 @@ export async function calculateVerifiedCartTotal(
     .in("id", variantIds);
 
   if (error || !variants || variants.length === 0) {
-    console.warn("[Anti-Tampering] Could not query database for variants, using item payload with strict limits:", error);
-    // If table lookup fails (e.g. mock items in tests), fallback to strict positive check
-    const subtotal = items.reduce((acc, it: any) => acc + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
-    const shippingFee = subtotal >= 999 ? 0 : 99;
-    const total = subtotal + shippingFee;
-    return {
-      subtotal,
-      shippingFee,
-      total,
-      items: items.map((i: any) => ({
-        variantId: i.variantId,
-        name: i.name || "Item",
-        size: i.size || "M",
-        color: i.color || null,
-        price: Number(i.price) || 0,
-        quantity: Math.max(1, Number(i.quantity) || 1),
-      })),
-    };
+    console.error("[Anti-Tampering] Variant lookup failed in database:", error);
+    throw new Error("Unable to verify product items in database. Please try again.");
   }
 
   type VariantRow = {
@@ -277,18 +261,7 @@ export async function calculateVerifiedCartTotal(
         stock: variant.stock,
       });
     } else {
-      // Variant not found in database: fallback item
-      const itemPrice = Math.max(1, Number((item as any).price) || 0);
-      verifiedSubtotal += itemPrice * qty;
-      verifiedItems.push({
-        variantId: item.variantId,
-        name: (item as any).name || "Product",
-        size: (item as any).size || "Standard",
-        color: (item as any).color || null,
-        price: itemPrice,
-        quantity: qty,
-        stock: 0,
-      });
+      throw new Error(`Product variant "${item.variantId}" is invalid or no longer available.`);
     }
   }
 

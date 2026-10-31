@@ -78,6 +78,22 @@ export async function POST(
       );
     }
 
+    // 2.1 Restore stock if items were previously deducted
+    if (order.order_items && Array.isArray(order.order_items) && order.order_items.length > 0) {
+      const restocks = order.order_items.map(async (item: any) => {
+        if (!item.variant_id || !item.quantity) return;
+        try {
+          await (adminDb.rpc as any)("increment_variant_stock", {
+            p_variant_id: item.variant_id,
+            p_quantity: item.quantity,
+          });
+        } catch (restockErr) {
+          console.warn(`[cancel order] Restock warning for variant ${item.variant_id}:`, restockErr);
+        }
+      });
+      await Promise.all(restocks);
+    }
+
     // 3. Send email to customer via Resend from support@6xtn.in
     const customerEmail = user.email || order.guest_email || (order.shipping_address as any)?.email;
     const recipientName =

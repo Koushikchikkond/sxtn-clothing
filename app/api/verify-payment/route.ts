@@ -48,13 +48,28 @@ export async function POST(req: NextRequest) {
     // If order was created from storefront with items and address, persist to database
     if (items && Array.isArray(items) && items.length > 0) {
       try {
+        const adminDb = createAdminClient();
+
+        // Idempotency check: prevent replay attacks or network retries creating duplicate orders
+        const { data: existingOrder } = await adminDb
+          .from("orders")
+          .select("id")
+          .eq("razorpay_payment_id", razorpay_payment_id)
+          .maybeSingle();
+
+        if (existingOrder && (existingOrder as { id?: string }).id) {
+          return NextResponse.json({
+            success: true,
+            message: "Payment already processed.",
+            orderId: (existingOrder as { id: string }).id,
+          });
+        }
+
         const verified = await calculateVerifiedCartTotal(items);
         const supabase = await createClient();
         const {
           data: { user },
         } = await supabase.auth.getUser();
-
-        const adminDb = createAdminClient();
 
         let linkedAddressId = address?.addressId || null;
 
@@ -183,10 +198,9 @@ export async function POST(req: NextRequest) {
         console.error("[POST /api/verify-payment] Database save error:", dbErr);
         return NextResponse.json(
           {
-            success: true,
-            warning: "Payment verified, but database persistence encountered an issue.",
+            error: "Payment was charged, but order recording failed. Please contact support immediately.",
           },
-          { status: 200 }
+          { status: 500 }
         );
       }
     }
