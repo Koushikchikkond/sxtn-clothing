@@ -5,9 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getHeroBanner } from "@/lib/hero-banner";
 import { HeroBannerSlider } from "@/components/storefront/hero-banner-slider";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
+import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 import type { Product, ProductImage } from "@/types/database.types";
 
-type ProductWithCover = Product & { product_images: ProductImage[] };
+type ProductWithCover = Product & {
+  product_images: ProductImage[];
+  product_variants?: Array<{ id: string; stock: number; size: string }>;
+};
 
 export default async function Home() {
   const supabase = await createClient();
@@ -17,7 +21,8 @@ export default async function Home() {
       .from("products")
       .select(`
         id, name, slug, price, compare_at_price,
-        product_images ( id, url, alt_text, position )
+        product_images ( id, url, alt_text, position ),
+        product_variants ( id, stock, size )
       `)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -31,8 +36,6 @@ export default async function Home() {
     <div className="flex flex-col min-h-screen bg-black text-white">
       {/* ─── Hero Section with Multi-Image Loop ─────────────────── */}
       <HeroBannerSlider banner={heroBanner} />
-
-
 
       {/* ─── Latest Drops (Live from Supabase) ───────────────────── */}
       <section className="py-24 w-full mx-auto">
@@ -71,6 +74,11 @@ export default async function Home() {
               const primaryImage = sortedImages[0];
               const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
 
+              const variants = product.product_variants || [];
+              const isOutOfStock =
+                variants.length > 0 && variants.every((v) => (v.stock ?? 0) <= 0);
+              const availableSizes = variants.map((v) => v.size).filter(Boolean);
+
               return (
                 <div key={product.id} className="group relative flex flex-col gap-3">
                   <Link
@@ -84,10 +92,12 @@ export default async function Home() {
                             src={primaryImage.url}
                             alt={primaryImage.alt_text || product.name}
                             fill
-                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                            className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
+                              isOutOfStock ? "opacity-60 grayscale-[35%]" : ""
+                            }`}
                             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                           />
-                          {secondaryImage && (
+                          {secondaryImage && !isOutOfStock && (
                             <Image
                               src={secondaryImage.url}
                               alt={secondaryImage.alt_text || product.name}
@@ -102,11 +112,17 @@ export default async function Home() {
                           <ShoppingBag className="w-10 h-10 text-white/20" />
                         </div>
                       )}
-                      {product.compare_at_price && (
+
+                      {/* Status Badges */}
+                      {isOutOfStock ? (
+                        <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 z-10 shadow-lg">
+                          Out of Stock
+                        </span>
+                      ) : product.compare_at_price ? (
                         <span className="absolute top-3 left-3 bg-white text-black text-xs font-bold uppercase tracking-widest px-2 py-1 z-10">
                           Sale
                         </span>
-                      )}
+                      ) : null}
 
                       {/* Bookmark Wishlist Button (Top-Right) */}
                       <WishlistButton
@@ -132,6 +148,19 @@ export default async function Home() {
                       </div>
                     </div>
                   </Link>
+
+                  {/* Out of Stock Notify Me Button */}
+                  {isOutOfStock && (
+                    <div className="px-2">
+                      <NotifyMeModal
+                        productId={product.id}
+                        productName={product.name}
+                        availableSizes={availableSizes}
+                        triggerClassName="w-full h-9 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-bold uppercase tracking-widest border border-white/20 transition-all rounded-none"
+                        buttonLabel="Notify Me"
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

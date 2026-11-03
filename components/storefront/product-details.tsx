@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Product, ProductImage, ProductVariant } from "@/types/database.types";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
+import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 
 interface ProductDetailsProps {
   product: Product;
@@ -260,6 +261,22 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
         >
           {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Bag" : "Add to Bag"}
         </button>
+
+        {/* Notify Me when Out of Stock */}
+        {isOutOfStock && (
+          <div className="mt-3">
+            <NotifyMeModal
+              productId={product.id}
+              productName={product.name}
+              variantId={selectedVariant?.id}
+              size={selectedSize}
+              availableSizes={sizes}
+              triggerClassName="w-full h-12 flex items-center justify-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-display text-xs font-bold uppercase tracking-widest transition-colors"
+              buttonLabel={`Notify Me When ${selectedSize || "Item"} Is Back`}
+            />
+          </div>
+        )}
+
 
         <div className="mt-12 space-y-8 border-t border-white/10 pt-8">
 

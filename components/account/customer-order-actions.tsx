@@ -100,8 +100,8 @@ export function CustomerOrderActions({
                 <strong className="text-white">₹{total.toLocaleString("en-IN")}</strong> will be
                 automatically credited to your original payment method in 5–7 business days. For
                 support, write to{" "}
-                <a href="mailto:support@6xtn.in" className="text-white underline hover:text-white/80">
-                  support@6xtn.in
+                <a href="mailto:6xtn.in@gmail.com" className="text-white underline hover:text-white/80">
+                  6xtn.in@gmail.com
                 </a>
                 .
               </p>
@@ -184,7 +184,7 @@ export function CustomerOrderActions({
             <p className="text-xs text-white/60 leading-relaxed">
               Please choose a reason for cancelling. This will update your order status in our system
               and a cancellation confirmation will be sent to your email from{" "}
-              <code className="text-white bg-white/10 px-1 py-0.5">support@6xtn.in</code>.
+              <code className="text-white bg-white/10 px-1 py-0.5">6xtn.in@gmail.com</code>.
             </p>
 
             <div className="space-y-3">

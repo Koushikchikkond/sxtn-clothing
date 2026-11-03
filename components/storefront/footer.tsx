@@ -53,7 +53,6 @@ export function Footer() {
               {[
                 { href: "/about", label: "About 6XTN" },
                 { href: "/contact", label: "Contact" },
-                { href: "/faq", label: "FAQ" },
                 { href: "/privacy", label: "Privacy Policy" },
                 { href: "/terms", label: "Terms of Service" },
               ].map((l) => (
@@ -70,10 +69,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="text-sm text-white/70">Mon–Sat, 12PM–6PM</li>
               <li>
-                <a href="tel:+918369950066" className="text-sm text-white/70 hover:text-white transition-colors">+91 836-995-0066</a>
-              </li>
-              <li>
-                <a href="mailto:support@6xtn.in" className="text-sm text-white/70 hover:text-white transition-colors">support@6xtn.in</a>
+                <a href="mailto:6xtn.in@gmail.com" className="text-sm text-white/70 hover:text-white transition-colors">6xtn.in@gmail.com</a>
               </li>
             </ul>
           </div>
@@ -122,8 +118,8 @@ export function Footer() {
               {[
                 { href: "/about", label: "About" },
                 { href: "/contact", label: "Contact" },
-                { href: "/faq", label: "FAQ" },
                 { href: "/privacy", label: "Privacy" },
+                { href: "/terms", label: "Terms" },
               ].map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-sm text-white/70">{l.label}</Link>
@@ -136,8 +132,8 @@ export function Footer() {
         {/* Support row */}
         <div className="border-t border-white/10 pt-8 mb-10">
           <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-3">Support</h4>
-          <p className="text-sm text-white/60 mb-1">Mon–Sat, 12PM–6PM</p>
-          <a href="tel:+918369950066" className="text-sm text-white/70 block">+91 836-995-0066</a>
+          <p className="text-sm text-white/60 mb-2">Mon–Sat, 12PM–6PM</p>
+          <a href="mailto:6xtn.in@gmail.com" className="text-sm text-white/70 hover:text-white transition-colors">6xtn.in@gmail.com</a>
         </div>
 
         {/* Star logo centered at bottom */}

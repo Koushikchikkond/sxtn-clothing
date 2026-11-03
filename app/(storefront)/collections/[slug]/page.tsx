@@ -41,6 +41,9 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
       *,
       product_images (
         id, url, alt_text, position
+      ),
+      product_variants (
+        id, stock, size
       )
     `)
     .eq("is_active", true)

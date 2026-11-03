@@ -14,10 +14,10 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-03-footer-support-cart-demands|2026-11-03 Storefront Info & Support, Cart Stock Validation, and Admin Demands]]
 - [[2026-10-31-push-security-patches-to-production|2026-10-31 Push Security Patches to Production]]
 - [[2026-10-31-apply-security-audit-fixes|2026-10-31 Apply Security Audit Defensive Fixes]]
 - [[2026-10-31-full-security-audit|2026-10-31 Full Security Audit - SXTN Webapp]]
 - [[2026-10-29-install-cloudflare-security-audit-skill|2026-10-29 Install Cloudflare Security Audit Skill]]
 - [[2026-10-29-deep-project-context-brain|2026-10-29 Deep Project Analysis & Obsidian Second Brain Creation]]
 - [[2026-10-29-connect-obsidian-vault|2026-10-29 Connect Obsidian Vault to SXTN Webapp]]
-
