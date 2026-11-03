@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, ProductImage, ProductVariant } from "@/types/database.types";
@@ -29,19 +29,19 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   const hasMultipleImages = images && images.length > 1;
   const activeImage = (images && images[activeImageIndex]) || images?.[0];
 
-  const handlePrevImage = useCallback((e?: React.MouseEvent) => {
+  const handlePrevImage = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
     if (!hasMultipleImages) return;
     setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  }, [hasMultipleImages, images?.length]);
+  };
 
-  const handleNextImage = useCallback((e?: React.MouseEvent) => {
+  const handleNextImage = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
     if (!hasMultipleImages) return;
     setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  }, [hasMultipleImages, images?.length]);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
@@ -64,18 +64,6 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
     setTouchStartX(null);
     setTouchStartY(null);
   };
-
-  // Keyboard navigation (ArrowLeft / ArrowRight)
-  useEffect(() => {
-    if (!hasMultipleImages) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "ArrowLeft") handlePrevImage();
-      if (e.key === "ArrowRight") handleNextImage();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasMultipleImages, handlePrevImage, handleNextImage]);
 
   // Only access Zustand store after client hydration to prevent mismatch
   useEffect(() => { setMounted(true); }, []);
