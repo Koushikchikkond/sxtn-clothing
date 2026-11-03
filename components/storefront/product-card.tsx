@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, ProductImage } from "@/types/database.types";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
@@ -36,20 +35,6 @@ export function ProductCard({ product }: ProductCardProps) {
   const isOutOfStock =
     variants.length > 0 && variants.every((v) => (v.stock ?? 0) <= 0);
   const availableSizes = variants.map((v) => v.size).filter(Boolean);
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultiple) return;
-    setCurrentIdx((prev) => (prev === 0 ? sortedImages.length - 1 : prev - 1));
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultiple) return;
-    setCurrentIdx((prev) => (prev === sortedImages.length - 1 ? 0 : prev + 1));
-  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     swipedRef.current = false;
@@ -113,38 +98,18 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* Left and Right Slide Switching Option */}
+          {/* Dots Indicator */}
           {hasMultiple && (
-            <>
-              <button
-                type="button"
-                onClick={handlePrev}
-                aria-label="Previous image"
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-sm cursor-pointer shadow-md"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                aria-label="Next image"
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-sm cursor-pointer shadow-md"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              {/* Dots Indicator */}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-xs rounded-full border border-white/10 pointer-events-none">
-                {sortedImages.map((_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1 transition-all rounded-full ${
-                      i === currentIdx ? "w-2.5 bg-white" : "w-1 bg-white/40"
-                    }`}
-                  />
-                ))}
-              </div>
-            </>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-xs rounded-full border border-white/10 pointer-events-none">
+              {sortedImages.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1 transition-all rounded-full ${
+                    i === currentIdx ? "w-2.5 bg-white" : "w-1 bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
           )}
 
           {/* Badges */}

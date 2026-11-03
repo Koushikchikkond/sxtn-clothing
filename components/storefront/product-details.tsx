@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, ProductImage, ProductVariant } from "@/types/database.types";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
@@ -181,32 +180,11 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
             </div>
           )}
 
-          {/* Left and Right Slide Switching Buttons */}
+          {/* Slide Counter / Indicator */}
           {hasMultipleImages && (
-            <>
-              <button
-                type="button"
-                onClick={handlePrevImage}
-                aria-label="Previous image"
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all backdrop-blur-sm touch-manipulation shadow-md group cursor-pointer"
-              >
-                <ChevronLeft className="w-6 h-6 transition-transform group-hover:-translate-x-0.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNextImage}
-                aria-label="Next image"
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all backdrop-blur-sm touch-manipulation shadow-md group cursor-pointer"
-              >
-                <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-0.5" />
-              </button>
-
-              {/* Slide Counter / Indicator */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1 bg-black/70 backdrop-blur-sm border border-white/20 text-[11px] font-mono tracking-widest text-white/90 uppercase">
-                {activeImageIndex + 1} / {images.length}
-              </div>
-            </>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1 bg-black/70 backdrop-blur-sm border border-white/20 text-[11px] font-mono tracking-widest text-white/90 uppercase pointer-events-none">
+              {activeImageIndex + 1} / {images.length}
+            </div>
           )}
 
           {/* Bookmark Wishlist Button (Top-Right) */}
