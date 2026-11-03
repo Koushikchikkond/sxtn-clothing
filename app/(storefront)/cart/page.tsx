@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useCartStore } from "@/lib/stores/cart.store";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, AlertTriangle } from "lucide-react";
 
-const SHIPPING_THRESHOLD = 999; // Free shipping above INR 999
 const SHIPPING_FEE = 99;
 
 interface ItemValidation {
@@ -62,7 +61,7 @@ export default function CartPage() {
     });
   };
 
-  const shippingFee = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  const shippingFee = SHIPPING_FEE;
   const total = subtotal + shippingFee;
 
   if (items.length === 0) {
@@ -242,19 +241,8 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between text-white/60">
                 <span>Shipping</span>
-                <span>
-                  {shippingFee === 0 ? (
-                    <span className="text-green-400">Free</span>
-                  ) : (
-                    `INR ${shippingFee}`
-                  )}
-                </span>
+                <span className="font-display font-medium text-white">INR {shippingFee}</span>
               </div>
-              {shippingFee > 0 && (
-                <p className="text-white/30 text-xs">
-                  Add INR {(SHIPPING_THRESHOLD - subtotal).toLocaleString("en-IN")} more for free shipping
-                </p>
-              )}
               <div className="border-t border-white/10 pt-3 flex justify-between font-medium">
                 <span>Total</span>
                 <span>INR {total.toLocaleString("en-IN")}</span>

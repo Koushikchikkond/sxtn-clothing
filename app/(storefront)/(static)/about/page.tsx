@@ -7,49 +7,51 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-black text-white pt-36 pb-32 px-6 sm:px-10 lg:px-16 max-w-4xl mx-auto">
-      <div className="space-y-16">
-        {/* Title */}
-        <div className="border-b border-white/10 pb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-3">
-            Origin & Identity
-          </p>
-          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl uppercase tracking-wider font-bold">
-            About 6XTN
-          </h1>
+    <div className="min-h-screen bg-black text-white pt-36 pb-32 px-6 sm:px-10 lg:px-16 flex flex-col items-center justify-center">
+      <div className="max-w-3xl w-full text-center space-y-16">
+        {/* Category / Sub-header */}
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-white/40">
+            ORIGIN & IDENTITY
+          </span>
+          <div className="h-px w-12 bg-white/20" />
         </div>
 
-        {/* Narrative */}
-        <div className="space-y-10 text-lg sm:text-xl md:text-2xl font-light text-white/90 leading-relaxed tracking-wide">
-          <p className="text-2xl sm:text-3xl font-display font-medium text-white">
-            6XTN is a name I created — Six, X, T, N.
+        {/* Headline */}
+        <h1 className="font-display text-4xl sm:text-6xl md:text-7xl uppercase tracking-[0.15em] font-black leading-tight text-white">
+          ABOUT 6XTN
+        </h1>
+
+        {/* Manifesto Content - All Uppercase */}
+        <div className="space-y-10 uppercase tracking-[0.14em] text-sm sm:text-base md:text-lg text-white/90 font-medium leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xl sm:text-2xl md:text-3xl font-display font-black text-white tracking-[0.12em]">
+            6XTN IS A NAME I CREATED — SIX, X, T, N.
           </p>
 
-          <p>
-            It has no obvious meaning, and that&apos;s exactly the point.
+          <p className="text-white/80">
+            IT HAS NO OBVIOUS MEANING, AND THAT&apos;S EXACTLY THE POINT.
           </p>
 
-          <p>
-            I wanted something that looked strong, sounded different, and could stand on its own as an identity.
+          <p className="text-white/80">
+            I WANTED SOMETHING THAT LOOKED STRONG, SOUNDED DIFFERENT, AND COULD STAND ON ITS OWN AS AN IDENTITY.
           </p>
 
-          <div className="border-l-2 border-white pl-6 sm:pl-8 py-2 my-12 text-white font-medium">
-            <p className="italic">
-              Because the meaning isn&apos;t something we start with.
+          <div className="border-y border-white/20 py-8 my-10 space-y-4">
+            <p className="text-white/60 text-xs sm:text-sm tracking-[0.25em]">
+              BECAUSE THE MEANING ISN&apos;T SOMETHING WE START WITH.
             </p>
-            <p className="mt-4 text-2xl sm:text-3xl font-display uppercase tracking-wider not-italic text-white">
-              It&apos;s something we build with it.
+            <p className="text-2xl sm:text-3xl md:text-4xl font-display font-black tracking-[0.18em] text-white">
+              IT&apos;S SOMETHING WE BUILD WITH IT.
             </p>
           </div>
         </div>
 
-        {/* Footer manifesto / meta */}
-        <div className="pt-12 border-t border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs uppercase tracking-[0.2em] text-white/40">
-          <span>India-Made, Globally Worn</span>
+        {/* Footer meta */}
+        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-[0.3em] text-white/40 font-bold">
+          <span>INDIA-MADE, GLOBALLY WORN</span>
           <span>EST. 2024</span>
         </div>
       </div>
     </div>
   );
 }
-

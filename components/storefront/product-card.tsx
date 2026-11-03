@@ -1,5 +1,9 @@
+"use client";
+
+import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, ProductImage } from "@/types/database.types";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
@@ -14,13 +18,18 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  // Sort images by position to ensure we get primary and secondary
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const swipedRef = useRef(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+
+  // Sort images by position
   const sortedImages = [...(product.product_images || [])].sort(
     (a, b) => a.position - b.position
   );
 
-  const primaryImage = sortedImages[0];
-  const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
+  const hasMultiple = sortedImages.length > 1;
+  const currentImage = sortedImages[currentIdx] || sortedImages[0];
 
   // Stock evaluation
   const variants = product.product_variants || [];
@@ -28,35 +37,114 @@ export function ProductCard({ product }: ProductCardProps) {
     variants.length > 0 && variants.every((v) => (v.stock ?? 0) <= 0);
   const availableSizes = variants.map((v) => v.size).filter(Boolean);
 
+  const handlePrev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!hasMultiple) return;
+    setCurrentIdx((prev) => (prev === 0 ? sortedImages.length - 1 : prev - 1));
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!hasMultiple) return;
+    setCurrentIdx((prev) => (prev === sortedImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    swipedRef.current = false;
+    setTouchStartX(e.touches[0].clientX);
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || touchStartY === null) return;
+    const diffX = touchStartX - e.changedTouches[0].clientX;
+    const diffY = touchStartY - e.changedTouches[0].clientY;
+
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 35) {
+      swipedRef.current = true;
+      if (diffX > 0) {
+        if (hasMultiple) {
+          setCurrentIdx((prev) => (prev === sortedImages.length - 1 ? 0 : prev + 1));
+        }
+      } else {
+        if (hasMultiple) {
+          setCurrentIdx((prev) => (prev === 0 ? sortedImages.length - 1 : prev - 1));
+        }
+      }
+    }
+    setTouchStartX(null);
+    setTouchStartY(null);
+  };
+
   return (
     <div className="group block relative">
-      <Link href={`/products/${product.slug}`} prefetch={true} className="block">
-        <div className="relative aspect-[3/4] mb-3 bg-sxtn-gray-900 overflow-hidden">
-          {primaryImage ? (
-            <>
-              <Image
-                src={primaryImage.url}
-                alt={primaryImage.alt_text || product.name}
-                fill
-                className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
-                  isOutOfStock ? "opacity-60 grayscale-[40%]" : ""
-                }`}
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              />
-              {secondaryImage && !isOutOfStock && (
-                <Image
-                  src={secondaryImage.url}
-                  alt={secondaryImage.alt_text || product.name}
-                  fill
-                  className="object-cover absolute inset-0 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 group-hover:scale-105"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                />
-              )}
-            </>
+      <Link
+        href={`/products/${product.slug}`}
+        prefetch={true}
+        onClick={(e) => {
+          if (swipedRef.current) {
+            e.preventDefault();
+            swipedRef.current = false;
+          }
+        }}
+        className="block"
+      >
+        <div
+          className="relative aspect-[3/4] mb-3 bg-sxtn-gray-900 overflow-hidden select-none"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {currentImage ? (
+            <Image
+              key={currentImage.id || currentIdx}
+              src={currentImage.url}
+              alt={currentImage.alt_text || product.name}
+              fill
+              className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
+                isOutOfStock ? "opacity-60 grayscale-[40%]" : ""
+              }`}
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-sxtn-gray-500 font-display text-sm tracking-widest">
               NO IMAGE
             </div>
+          )}
+
+          {/* Left and Right Slide Switching Option */}
+          {hasMultiple && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                aria-label="Previous image"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-sm cursor-pointer shadow-md"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                aria-label="Next image"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-sm cursor-pointer shadow-md"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              {/* Dots Indicator */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-xs rounded-full border border-white/10 pointer-events-none">
+                {sortedImages.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1 transition-all rounded-full ${
+                      i === currentIdx ? "w-2.5 bg-white" : "w-1 bg-white/40"
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
           )}
 
           {/* Badges */}
@@ -74,7 +162,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <WishlistButton
             productId={product.id}
             productName={product.name}
-            className="absolute top-2.5 right-2.5"
+            className="absolute top-2.5 right-2.5 z-10"
             size="sm"
           />
         </div>

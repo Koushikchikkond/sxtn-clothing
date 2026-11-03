@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, ProductImage, ProductVariant } from "@/types/database.types";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
@@ -14,12 +15,67 @@ interface ProductDetailsProps {
 }
 
 export function ProductDetails({ product, images, variants }: ProductDetailsProps) {
-  const [activeImage, setActiveImage] = useState(images[0]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [sizeError, setSizeError] = useState(false);
   const [added, setAdded] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Touch swipe state
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+
+  const hasMultipleImages = images && images.length > 1;
+  const activeImage = (images && images[activeImageIndex]) || images?.[0];
+
+  const handlePrevImage = useCallback((e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (!hasMultipleImages) return;
+    setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  }, [hasMultipleImages, images?.length]);
+
+  const handleNextImage = useCallback((e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (!hasMultipleImages) return;
+    setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  }, [hasMultipleImages, images?.length]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || touchStartY === null) return;
+    const diffX = touchStartX - e.changedTouches[0].clientX;
+    const diffY = touchStartY - e.changedTouches[0].clientY;
+
+    // Must be predominantly horizontal gesture exceeding 40px
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
+      if (diffX > 0) {
+        handleNextImage();
+      } else {
+        handlePrevImage();
+      }
+    }
+    setTouchStartX(null);
+    setTouchStartY(null);
+  };
+
+  // Keyboard navigation (ArrowLeft / ArrowRight)
+  useEffect(() => {
+    if (!hasMultipleImages) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowLeft") handlePrevImage();
+      if (e.key === "ArrowRight") handleNextImage();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasMultipleImages, handlePrevImage, handleNextImage]);
 
   // Only access Zustand store after client hydration to prevent mismatch
   useEffect(() => { setMounted(true); }, []);
@@ -88,39 +144,47 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
       {/* ── Image Gallery ──────────────────────────────────────────── */}
       <div className="flex flex-col-reverse md:flex-row gap-4 md:sticky md:top-24 w-full">
         {/* Thumbnails */}
-        <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible no-scrollbar pb-2 md:pb-0">
-          {images.map((img) => (
-            <button
-              key={img.id}
-              type="button"
-              onClick={() => setActiveImage(img)}
-              className={cn(
-                "relative shrink-0 w-20 h-24 bg-sxtn-gray-900 border transition-all touch-manipulation",
-                activeImage?.id === img.id
-                  ? "border-white"
-                  : "border-transparent"
-              )}
-            >
-              <Image
-                src={img.url}
-                alt={img.alt_text || product.name}
-                fill
-                className="object-cover"
-                sizes="80px"
-              />
-            </button>
-          ))}
-        </div>
+        {hasMultipleImages && (
+          <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible no-scrollbar pb-2 md:pb-0">
+            {images.map((img, idx) => (
+              <button
+                key={img.id}
+                type="button"
+                onClick={() => setActiveImageIndex(idx)}
+                aria-label={`View image ${idx + 1}`}
+                className={cn(
+                  "relative shrink-0 w-20 h-24 bg-sxtn-gray-900 border transition-all touch-manipulation",
+                  activeImageIndex === idx
+                    ? "border-white"
+                    : "border-transparent opacity-60 hover:opacity-100"
+                )}
+              >
+                <Image
+                  src={img.url}
+                  alt={img.alt_text || product.name}
+                  fill
+                  className="object-cover"
+                  sizes="80px"
+                />
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Main Image */}
-        <div className="relative flex-1 aspect-[3/4] bg-sxtn-gray-900 overflow-hidden">
+        {/* Main Image with Swipe & Slide Controls */}
+        <div
+          className="relative flex-1 aspect-[3/4] bg-sxtn-gray-900 overflow-hidden select-none"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {activeImage ? (
             <Image
+              key={activeImage.id || activeImageIndex}
               src={activeImage.url}
               alt={activeImage.alt_text || product.name}
               fill
               priority
-              className="object-contain"
+              className="object-contain transition-opacity duration-300"
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           ) : (
@@ -129,11 +193,39 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
             </div>
           )}
 
+          {/* Left and Right Slide Switching Buttons */}
+          {hasMultipleImages && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                aria-label="Previous image"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all backdrop-blur-sm touch-manipulation shadow-md group cursor-pointer"
+              >
+                <ChevronLeft className="w-6 h-6 transition-transform group-hover:-translate-x-0.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNextImage}
+                aria-label="Next image"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center bg-black/70 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white transition-all backdrop-blur-sm touch-manipulation shadow-md group cursor-pointer"
+              >
+                <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-0.5" />
+              </button>
+
+              {/* Slide Counter / Indicator */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1 bg-black/70 backdrop-blur-sm border border-white/20 text-[11px] font-mono tracking-widest text-white/90 uppercase">
+                {activeImageIndex + 1} / {images.length}
+              </div>
+            </>
+          )}
+
           {/* Bookmark Wishlist Button (Top-Right) */}
           <WishlistButton
             productId={product.id}
             productName={product.name}
-            className="absolute top-3 right-3 sm:top-5 sm:right-5"
+            className="absolute top-3 right-3 sm:top-5 sm:right-5 z-10"
             size="lg"
           />
         </div>

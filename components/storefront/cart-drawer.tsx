@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, Trash2, ArrowRight, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCartStore } from "@/lib/stores/cart.store";
 
-const SHIPPING_THRESHOLD = 999;
 const SHIPPING_FEE = 99;
 
 interface ItemValidation {
@@ -66,9 +65,8 @@ export function CartDrawer() {
     });
   };
 
-  const shippingFee = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  const shippingFee = SHIPPING_FEE;
   const total       = subtotal + shippingFee;
-  const remaining   = SHIPPING_THRESHOLD - subtotal;
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -135,33 +133,6 @@ export function CartDrawer() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-
-            {/* Free shipping progress bar */}
-            {items.length > 0 && shippingFee > 0 && (
-              <div className="px-6 pt-4 pb-2">
-                <div className="h-px bg-white/10 w-full relative overflow-hidden">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 bg-white"
-                    initial={false}
-                    animate={{ width: `${Math.min((subtotal / SHIPPING_THRESHOLD) * 100, 100)}%` }}
-                    transition={{ type: "spring", stiffness: 200, damping: 30 }}
-                  />
-                </div>
-                <p className="text-white/30 text-xs mt-2 tracking-wide">
-                  Add{" "}
-                  <span className="text-white">INR {remaining.toLocaleString("en-IN")}</span>{" "}
-                  more for free shipping
-                </p>
-              </div>
-            )}
-            {items.length > 0 && shippingFee === 0 && (
-              <div className="px-6 pt-4 pb-2">
-                <div className="h-px bg-white w-full" />
-                <p className="text-green-400 text-xs mt-2 tracking-wide">
-                  ✓ You get free shipping!
-                </p>
-              </div>
-            )}
 
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
@@ -341,13 +312,7 @@ export function CartDrawer() {
                   </div>
                   <div className="flex justify-between text-white/40">
                     <span>Shipping</span>
-                    <span>
-                      {shippingFee === 0 ? (
-                        <span className="text-green-400 font-medium">Free</span>
-                      ) : (
-                        `INR ${shippingFee}`
-                      )}
-                    </span>
+                    <span className="font-display font-medium text-white">INR {shippingFee}</span>
                   </div>
                   <div className="flex justify-between text-white font-bold pt-2 border-t border-white/10 text-lg sm:text-xl font-display">
                     <span>Total</span>

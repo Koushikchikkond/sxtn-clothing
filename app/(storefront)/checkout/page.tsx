@@ -31,7 +31,6 @@ interface AddressForm {
   saveAddress?: boolean;
 }
 
-const SHIPPING_THRESHOLD = 999;
 const SHIPPING_FEE = 99;
 
 export default function CheckoutPage() {
@@ -41,7 +40,7 @@ export default function CheckoutPage() {
   const subtotal = useCartStore((s) => s.subtotal());
   const clearCart = useCartStore((s) => s.clearCart);
 
-  const shippingFee = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  const shippingFee = SHIPPING_FEE;
   const total = subtotal + shippingFee;
 
   // Authentication & saved addresses state
@@ -763,15 +762,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-white/60">
                     <span>Shipping</span>
-                    <span>
-                      {shippingFee === 0 ? (
-                        <span className="text-green-400 font-bold uppercase tracking-wider text-xs">
-                          Free
-                        </span>
-                      ) : (
-                        `INR ${shippingFee}`
-                      )}
-                    </span>
+                    <span className="font-display font-medium text-white">INR {shippingFee}</span>
                   </div>
                   <div className="flex justify-between font-bold text-base pt-3 border-t border-white/10 text-white">
                     <span>Total Due</span>

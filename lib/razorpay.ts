@@ -270,7 +270,7 @@ export async function calculateVerifiedCartTotal(
     }
   }
 
-  const verifiedShippingFee = verifiedSubtotal >= 999 ? 0 : 99;
+  const verifiedShippingFee = 99;
   const verifiedTotal = verifiedSubtotal + verifiedShippingFee;
 
   return {
