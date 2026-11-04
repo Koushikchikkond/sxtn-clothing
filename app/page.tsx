@@ -1,11 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroBanner } from "@/lib/hero-banner";
 import { HeroBannerSlider } from "@/components/storefront/hero-banner-slider";
-import { WishlistButton } from "@/components/storefront/wishlist-button";
-import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
+import { ProductCard } from "@/components/storefront/product-card";
 import type { Product, ProductImage } from "@/types/database.types";
 
 type ProductWithCover = Product & {
@@ -66,104 +64,10 @@ export default async function Home() {
             </Link>
           </div>
         ) : (
-          <div className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12 px-0">
-            {products.map((product) => {
-              const sortedImages = [...(product.product_images ?? [])].sort(
-                (a, b) => a.position - b.position
-              );
-              const primaryImage = sortedImages[0];
-              const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
-
-              const variants = product.product_variants || [];
-              const isOutOfStock =
-                variants.length > 0 && variants.every((v) => (v.stock ?? 0) <= 0);
-              const availableSizes = variants.map((v) => v.size).filter(Boolean);
-
-              return (
-                <div key={product.id} className="group relative flex flex-col gap-3">
-                  <Link
-                    href={`/products/${product.slug}`}
-                    className="block"
-                  >
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
-                      {primaryImage ? (
-                        <>
-                          <Image
-                            src={primaryImage.url}
-                            alt={primaryImage.alt_text || product.name}
-                            fill
-                            className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
-                              isOutOfStock ? "opacity-60 grayscale-[35%]" : ""
-                            }`}
-                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                          />
-                          {secondaryImage && !isOutOfStock && (
-                            <Image
-                              src={secondaryImage.url}
-                              alt={secondaryImage.alt_text || product.name}
-                              fill
-                              className="object-cover absolute inset-0 opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 group-hover:scale-105"
-                              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                            />
-                          )}
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-10 h-10 text-white/20" />
-                        </div>
-                      )}
-
-                      {/* Status Badges */}
-                      {isOutOfStock ? (
-                        <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 z-10 shadow-lg">
-                          Out of Stock
-                        </span>
-                      ) : product.compare_at_price ? (
-                        <span className="absolute top-3 left-3 bg-white text-black text-xs font-bold uppercase tracking-widest px-2 py-1 z-10">
-                          Sale
-                        </span>
-                      ) : null}
-
-                      {/* Bookmark Wishlist Button (Top-Right) */}
-                      <WishlistButton
-                        productId={product.id}
-                        productName={product.name}
-                        className="absolute top-2.5 right-2.5"
-                        size="sm"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
-                      <h3 className="font-display font-bold tracking-tight uppercase text-sm sm:text-base md:text-base text-white leading-snug">
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="font-display font-bold tracking-tight text-sm sm:text-base md:text-base text-white">
-                          INR {product.price.toLocaleString("en-IN")}
-                        </p>
-                        {product.compare_at_price && (
-                          <p className="text-xs text-white/40 line-through">
-                            INR {product.compare_at_price.toLocaleString("en-IN")}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-
-                  {/* Out of Stock Notify Me Button */}
-                  {isOutOfStock && (
-                    <div className="px-2">
-                      <NotifyMeModal
-                        productId={product.id}
-                        productName={product.name}
-                        availableSizes={availableSizes}
-                        triggerClassName="w-full h-9 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-bold uppercase tracking-widest border border-white/20 transition-all rounded-none"
-                        buttonLabel="Notify Me"
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-0 gap-y-10 md:gap-y-12 px-0">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
           </div>
         )}
 

@@ -85,7 +85,7 @@ export default function WishlistPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-0 gap-y-10 md:gap-y-12">
           {items.map(({ product_id, products }) => {
             if (!products) return null;
             const sortedImages = [...(products.product_images ?? [])].sort(

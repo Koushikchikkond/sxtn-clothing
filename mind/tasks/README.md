@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-04-remove-product-grid-horizontal-gap|2026-11-04 Remove Horizontal Gap Between Products in Catalog Grid]]
 - [[2026-11-03-remove-onscreen-gallery-arrow-buttons|2026-11-03 Remove Onscreen Arrow Buttons from Product Images]]
 - [[2026-11-03-remove-product-keyboard-arrows|2026-11-03 Remove Keyboard Arrow Navigation from Product Gallery]]
 - [[2026-11-03-about-terms-gallery-slider-cart-shipping|2026-11-03 About Uppercase, Terms Update, Product Image Swipe Slider, and Remove Cart Free Shipping]]

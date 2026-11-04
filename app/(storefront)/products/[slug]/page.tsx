@@ -116,7 +116,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               You May Also Like
             </h2>
           </div>
-          <div className="grid w-full grid-cols-2 md:grid-cols-4 gap-x-1 gap-y-10 md:gap-y-12 px-0">
+          <div className="grid w-full grid-cols-2 md:grid-cols-4 gap-x-0 gap-y-10 md:gap-y-12 px-0">
             {suggestions.map((s) => {
               const cover = [...(s.product_images ?? [])].sort(
                 (a, b) => a.position - b.position

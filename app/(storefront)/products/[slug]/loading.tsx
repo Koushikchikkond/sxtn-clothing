@@ -63,7 +63,7 @@ export default function ProductLoading() {
         <div className="px-4 sm:px-6 lg:px-12 mb-10">
           <div className="h-8 w-64 bg-white/10 animate-pulse" />
         </div>
-        <div className="grid w-full grid-cols-2 md:grid-cols-4 gap-x-1 gap-y-10 px-0">
+        <div className="grid w-full grid-cols-2 md:grid-cols-4 gap-x-0 gap-y-10 px-0">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex flex-col gap-3">
               <div className="aspect-[3/4] w-full bg-white/5 animate-pulse" />
