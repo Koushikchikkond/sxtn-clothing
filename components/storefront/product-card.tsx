@@ -27,6 +27,8 @@ export function ProductCard({ product }: ProductCardProps) {
     (a, b) => a.position - b.position
   );
 
+  const primaryImage = sortedImages[0];
+  const secondaryImage = sortedImages.length > 1 ? sortedImages[1] : null;
   const hasMultiple = sortedImages.length > 1;
   const currentImage = sortedImages[currentIdx] || sortedImages[0];
 
@@ -81,17 +83,30 @@ export function ProductCard({ product }: ProductCardProps) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {currentImage ? (
-            <Image
-              key={currentImage.id || currentIdx}
-              src={currentImage.url}
-              alt={currentImage.alt_text || product.name}
-              fill
-              className={`object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
-                isOutOfStock ? "opacity-60 grayscale-[40%]" : ""
-              }`}
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-            />
+          {primaryImage ? (
+            <>
+              {/* Primary Image: Scales subtly on hover, visible by default */}
+              <Image
+                src={currentIdx === 0 ? primaryImage.url : currentImage.url}
+                alt={currentImage.alt_text || product.name}
+                fill
+                className={`object-cover transition-transform duration-700 ease-in-out group-hover:scale-105 ${
+                  isOutOfStock ? "opacity-60 grayscale-[40%]" : ""
+                }`}
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              />
+
+              {/* Secondary Image: Smoothly fades in on hover, fades back on mouse leave */}
+              {currentIdx === 0 && secondaryImage && !isOutOfStock && (
+                <Image
+                  src={secondaryImage.url}
+                  alt={secondaryImage.alt_text || product.name}
+                  fill
+                  className="object-cover absolute inset-0 opacity-0 transition-all duration-700 ease-in-out group-hover:opacity-100 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                />
+              )}
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center text-sxtn-gray-500 font-display text-sm tracking-widest">
               NO IMAGE
@@ -122,20 +137,20 @@ export function ProductCard({ product }: ProductCardProps) {
               Sale
             </div>
           ) : null}
-
-          {/* Bookmark Wishlist Button (Top-Right) */}
-          <WishlistButton
-            productId={product.id}
-            productName={product.name}
-            className="absolute top-2.5 right-2.5 z-10"
-            size="sm"
-          />
         </div>
 
         <div className="pt-2 pb-1 px-2 space-y-1.5">
-          <h3 className="font-display text-base sm:text-lg md:text-xl font-bold tracking-tight uppercase text-white leading-snug">
-            {product.name}
-          </h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-display text-base sm:text-lg md:text-xl font-bold tracking-tight uppercase text-white leading-snug">
+              {product.name}
+            </h3>
+            <WishlistButton
+              productId={product.id}
+              productName={product.name}
+              className="shrink-0 mt-0.5"
+              size="sm"
+            />
+          </div>
           <div className="flex items-center gap-2.5">
             <span className="font-display text-base sm:text-lg md:text-xl font-bold text-white tracking-tight">
               INR {product.price.toLocaleString("en-IN")}

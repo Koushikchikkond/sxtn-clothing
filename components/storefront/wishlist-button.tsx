@@ -10,6 +10,7 @@ interface WishlistButtonProps {
   productName?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
+  variant?: "floating" | "button";
 }
 
 export function WishlistButton({
@@ -17,6 +18,7 @@ export function WishlistButton({
   productName,
   className,
   size = "md",
+  variant = "floating",
 }: WishlistButtonProps) {
   const isInWishlist = useWishlistStore((s) => s.isInWishlist(productId));
   const toggle = useWishlistStore((s) => s.toggle);
@@ -84,21 +86,39 @@ export function WishlistButton({
         aria-pressed={active}
         title={active ? "Saved to Wishlist" : "Save to Wishlist"}
         className={cn(
-          "rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer touch-manipulation",
-          "bg-black/50 hover:bg-black/80 backdrop-blur-md border border-white/15",
-          "shadow-lg active:scale-90",
-          sizeClasses[size],
-          animating && "scale-110",
-          active && "border-white/30 bg-black/70"
+          "transition-all duration-200 cursor-pointer touch-manipulation",
+          variant === "button"
+            ? cn(
+                "h-14 w-14 border flex items-center justify-center shrink-0",
+                active
+                  ? "border-white bg-white text-black"
+                  : "border-white/20 hover:border-white bg-transparent text-white hover:bg-white/5",
+                animating && "scale-105"
+              )
+            : cn(
+                "rounded-full flex items-center justify-center",
+                "bg-black/50 hover:bg-black/80 backdrop-blur-md border border-white/15",
+                "shadow-lg active:scale-90",
+                sizeClasses[size],
+                animating && "scale-110",
+                active && "border-white/30 bg-black/70"
+              )
         )}
       >
         <Bookmark
           className={cn(
             "transition-all duration-200 stroke-[1.8]",
-            iconSizes[size],
-            active
-              ? "fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
-              : "text-white/80 hover:text-white"
+            variant === "button"
+              ? cn(
+                  "w-6 h-6",
+                  active ? "fill-black text-black" : "text-white"
+                )
+              : cn(
+                  iconSizes[size],
+                  active
+                    ? "fill-white text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                    : "text-white/80 hover:text-white"
+                )
           )}
         />
       </button>

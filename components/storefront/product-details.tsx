@@ -186,14 +186,6 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
               {activeImageIndex + 1} / {images.length}
             </div>
           )}
-
-          {/* Bookmark Wishlist Button (Top-Right) */}
-          <WishlistButton
-            productId={product.id}
-            productName={product.name}
-            className="absolute top-3 right-3 sm:top-5 sm:right-5 z-10"
-            size="lg"
-          />
         </div>
       </div>
 
@@ -302,23 +294,32 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
           )}
         </div>
 
-        {/* Add to Bag */}
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          className={cn(
-            "w-full h-14 flex items-center justify-center font-display font-bold text-base sm:text-lg tracking-widest uppercase touch-manipulation transition-colors duration-200",
-            isOutOfStock
-              ? "bg-white/10 text-white/40 cursor-not-allowed"
-              : added
-              ? "bg-green-500/20 text-green-400 border border-green-500/30"
-              : "bg-white text-black hover:bg-white/90"
-          )}
-        >
-          {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Bag" : "Add to Bag"}
-        </button>
+        {/* Add to Bag and Wishlist Action Group */}
+        <div className="flex items-center gap-3 w-full">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            style={{ WebkitTapHighlightColor: "transparent" }}
+            className={cn(
+              "flex-1 h-14 flex items-center justify-center font-display font-bold text-base sm:text-lg tracking-widest uppercase touch-manipulation transition-colors duration-200",
+              isOutOfStock
+                ? "bg-white/10 text-white/40 cursor-not-allowed"
+                : added
+                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                : "bg-white text-black hover:bg-white/90"
+            )}
+          >
+            {isOutOfStock ? "Out of Stock" : added ? "✓ Added to Bag" : "Add to Bag"}
+          </button>
+
+          <WishlistButton
+            productId={product.id}
+            productName={product.name}
+            variant="button"
+            className="shrink-0"
+          />
+        </div>
 
         {/* Notify Me when Out of Stock */}
         {isOutOfStock && (
