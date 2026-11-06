@@ -428,6 +428,7 @@ export function ProductForm({ initialProduct }: ProductFormProps = {}) {
               product_id: productId,
               size: v.size.trim().toUpperCase(),
               stock: Number(v.stock) || 0,
+              sku: `6XTN-${(slug || name).slice(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, "-")}-${v.size.trim().toUpperCase()}`,
             })) as any
           );
         }
@@ -456,6 +457,7 @@ export function ProductForm({ initialProduct }: ProductFormProps = {}) {
               product_id: productId,
               size: v.size.trim().toUpperCase(),
               stock: Number(v.stock) || 0,
+              sku: `6XTN-${(slug || name).slice(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, "-")}-${v.size.trim().toUpperCase()}`,
             })) as any
           );
         }

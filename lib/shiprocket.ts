@@ -473,7 +473,7 @@ export function buildShiprocketPayload(order: {
       name: [item.product_name, item.size, item.color]
         .filter(Boolean)
         .join(" – "),
-      sku: `SXTN-${item.product_name.slice(0, 8).toUpperCase().replace(/\s+/g, "-")}`,
+      sku: `6XTN-${item.product_name.slice(0, 8).toUpperCase().replace(/\s+/g, "-")}${item.size ? `-${item.size.toUpperCase()}` : ""}`,
       units: item.quantity,
       selling_price: item.unit_price,
     })),
