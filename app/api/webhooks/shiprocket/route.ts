@@ -57,6 +57,10 @@ const SR_STATUS_MAP: Record<
   14:  { internalStatus: null, label: "RTO Delivered" },
 };
 
+export async function GET() {
+  return NextResponse.json({ status: "ok" });
+}
+
 export async function POST(req: NextRequest) {
   try {
     // ── 1. Token verification ──────────────────────────────────────────────
@@ -71,8 +75,9 @@ export async function POST(req: NextRequest) {
     }
 
     const authHeader = req.headers.get("authorization") || "";
+    const apiKeyHeader = req.headers.get("x-api-key") || "";
     const queryToken = req.nextUrl.searchParams.get("token") || "";
-    const receivedToken = authHeader.replace(/^Bearer\s+/i, "") || queryToken;
+    const receivedToken = apiKeyHeader || authHeader.replace(/^Bearer\s+/i, "") || queryToken;
 
     const bufReceived = Buffer.from(receivedToken);
     const bufExpected = Buffer.from(webhookToken);

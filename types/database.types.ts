@@ -4,6 +4,13 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
+export interface SizeGuideEntry {
+  size: string;
+  chest: string | number;
+  length: string | number;
+  shoulder?: string | number;
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -75,6 +82,8 @@ export type Database = {
           tags:             string[];
           features:         string[] | null;
           wash_care:        string[] | null;
+          product_type:     "tshirt" | "hoodie";
+          size_chart:       SizeGuideEntry[] | null;
           created_at:       string;
           updated_at:       string;
         };
@@ -90,6 +99,8 @@ export type Database = {
           tags?:             string[];
           features?:         string[] | null;
           wash_care?:        string[] | null;
+          product_type?:     "tshirt" | "hoodie";
+          size_chart?:       SizeGuideEntry[] | null;
           created_at?:       string;
           updated_at?:       string;
         };
@@ -104,6 +115,8 @@ export type Database = {
           tags?:             string[];
           features?:         string[] | null;
           wash_care?:        string[] | null;
+          product_type?:     "tshirt" | "hoodie";
+          size_chart?:       SizeGuideEntry[] | null;
           updated_at?:       string;
         };
         Relationships: [];

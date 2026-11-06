@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Product, ProductImage, ProductVariant } from "@/types/database.types";
+import { Product, ProductImage, ProductVariant, SizeGuideEntry } from "@/types/database.types";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
@@ -78,6 +78,35 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   // Determine current price (variant might have price override)
   const currentPrice = selectedVariant?.price_override ?? product.price;
   const isOutOfStock = !!(selectedSize && (!selectedVariant || selectedVariant.stock <= 0));
+
+  // Dynamic Size Chart resolution (custom product size chart or sensible default)
+  const isHoodie =
+    product.product_type === "hoodie" ||
+    (Array.isArray(product.size_chart) &&
+      product.size_chart.some((e) => e.shoulder != null && e.shoulder !== ""));
+
+  const defaultTeeChart: SizeGuideEntry[] = [
+    { size: "S", chest: "46", length: "24" },
+    { size: "M", chest: "48", length: "25" },
+    { size: "L", chest: "50", length: "26" },
+    { size: "XL", chest: "52", length: "27" },
+    { size: "2XL", chest: "54", length: "28" },
+  ];
+
+  const defaultHoodieChart: SizeGuideEntry[] = [
+    { size: "S", chest: "46", length: "26", shoulder: "21" },
+    { size: "M", chest: "48", length: "27", shoulder: "22" },
+    { size: "L", chest: "50", length: "28", shoulder: "23" },
+    { size: "XL", chest: "52", length: "29", shoulder: "24" },
+    { size: "2XL", chest: "54", length: "30", shoulder: "25" },
+  ];
+
+  const activeSizeChart: SizeGuideEntry[] =
+    Array.isArray(product.size_chart) && product.size_chart.length > 0
+      ? product.size_chart
+      : isHoodie
+      ? defaultHoodieChart
+      : defaultTeeChart;
 
   async function handleAddToCart() {
     if (!selectedSize || !selectedVariant) {
@@ -369,39 +398,77 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
             </div>
           )}
 
-          {/* Size Chart (Universal) */}
+          {/* Size Chart */}
           <div className="border-t border-white/10 pt-6">
-            <h4 className="font-display text-sm font-bold uppercase tracking-widest text-white mb-4">Size Guide</h4>
+            <h4 className="font-display text-sm font-bold uppercase tracking-widest text-white mb-4">
+              Size Guide {isHoodie ? "(Hoodie)" : "(T-Shirt)"}
+            </h4>
             
             <div className="overflow-x-auto border border-white/10 rounded-sm">
               <table className="w-full text-sm sm:text-base text-left whitespace-nowrap">
                 <thead className="bg-white/5 border-b border-white/10">
                   <tr>
-                    <th className="px-4 py-3 font-display uppercase tracking-widest text-white font-normal border-r border-white/10">Size (Inches)</th>
-                    <th className="px-4 py-3 font-display uppercase tracking-widest text-white font-normal text-center border-r border-white/10">S</th>
-                    <th className="px-4 py-3 font-display uppercase tracking-widest text-white font-normal text-center border-r border-white/10">M</th>
-                    <th className="px-4 py-3 font-display uppercase tracking-widest text-white font-normal text-center border-r border-white/10">L</th>
-                    <th className="px-4 py-3 font-display uppercase tracking-widest text-white font-normal text-center border-r border-white/10">XL</th>
-                    <th className="px-4 py-3 font-display uppercase tracking-widest text-white font-normal text-center">2XL</th>
+                    <th className="px-4 py-3 font-display uppercase tracking-widest text-white font-normal border-r border-white/10">
+                      Size (Inches)
+                    </th>
+                    {activeSizeChart.map((entry, idx) => (
+                      <th
+                        key={entry.size}
+                        className={cn(
+                          "px-4 py-3 font-display uppercase tracking-widest text-white font-normal text-center",
+                          idx < activeSizeChart.length - 1 && "border-r border-white/10"
+                        )}
+                      >
+                        {entry.size}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   <tr className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-4 py-3 font-medium text-white border-r border-white/10">Chest</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">46</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">48</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">50</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">52</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center">54</td>
+                    {activeSizeChart.map((entry, idx) => (
+                      <td
+                        key={`chest-${entry.size}`}
+                        className={cn(
+                          "px-4 py-3 text-sxtn-gray-300 text-center",
+                          idx < activeSizeChart.length - 1 && "border-r border-white/10"
+                        )}
+                      >
+                        {entry.chest || "—"}
+                      </td>
+                    ))}
                   </tr>
                   <tr className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-4 py-3 font-medium text-white border-r border-white/10">Length</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">24</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">25</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">26</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center border-r border-white/10">27</td>
-                    <td className="px-4 py-3 text-sxtn-gray-300 text-center">28</td>
+                    {activeSizeChart.map((entry, idx) => (
+                      <td
+                        key={`length-${entry.size}`}
+                        className={cn(
+                          "px-4 py-3 text-sxtn-gray-300 text-center",
+                          idx < activeSizeChart.length - 1 && "border-r border-white/10"
+                        )}
+                      >
+                        {entry.length || "—"}
+                      </td>
+                    ))}
                   </tr>
+                  {isHoodie && (
+                    <tr className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-4 py-3 font-medium text-white border-r border-white/10">Shoulder</td>
+                      {activeSizeChart.map((entry, idx) => (
+                        <td
+                          key={`shoulder-${entry.size}`}
+                          className={cn(
+                            "px-4 py-3 text-sxtn-gray-300 text-center",
+                            idx < activeSizeChart.length - 1 && "border-r border-white/10"
+                          )}
+                        >
+                          {entry.shoulder || "—"}
+                        </td>
+                      ))}
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

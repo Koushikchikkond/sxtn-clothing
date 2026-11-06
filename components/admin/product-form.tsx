@@ -149,6 +149,26 @@ interface VariantItem {
   stock: number;
 }
 
+const DEFAULT_TSHIRT_MEASUREMENTS: Record<string, { chest: string; length: string; shoulder?: string }> = {
+  XS:    { chest: "44", length: "23" },
+  S:     { chest: "46", length: "24" },
+  M:     { chest: "48", length: "25" },
+  L:     { chest: "50", length: "26" },
+  XL:    { chest: "52", length: "27" },
+  "2XL": { chest: "54", length: "28" },
+  "3XL": { chest: "56", length: "29" },
+};
+
+const DEFAULT_HOODIE_MEASUREMENTS: Record<string, { chest: string; length: string; shoulder?: string }> = {
+  XS:    { chest: "44", length: "25", shoulder: "20" },
+  S:     { chest: "46", length: "26", shoulder: "21" },
+  M:     { chest: "48", length: "27", shoulder: "22" },
+  L:     { chest: "50", length: "28", shoulder: "23" },
+  XL:    { chest: "52", length: "29", shoulder: "24" },
+  "2XL": { chest: "54", length: "30", shoulder: "25" },
+  "3XL": { chest: "56", length: "31", shoulder: "26" },
+};
+
 interface ProductFormProps {
   initialProduct?: any;
 }
@@ -202,6 +222,70 @@ export function ProductForm({ initialProduct }: ProductFormProps = {}) {
   const [newSizeName, setNewSizeName] = useState("");
   const [newSizeStock, setNewSizeStock] = useState("100");
 
+  // Product Type (tshirt or hoodie)
+  const [productType, setProductType] = useState<"tshirt" | "hoodie">(
+    initialProduct?.product_type === "hoodie" ? "hoodie" : "tshirt"
+  );
+
+  // Size Guide measurements map: { [size: string]: { chest: string; length: string; shoulder?: string } }
+  const [sizeGuideMap, setSizeGuideMap] = useState<
+    Record<string, { chest: string; length: string; shoulder?: string }>
+  >(() => {
+    const existingChart = initialProduct?.size_chart;
+    const initialMap: Record<string, { chest: string; length: string; shoulder?: string }> = {};
+
+    if (Array.isArray(existingChart) && existingChart.length > 0) {
+      existingChart.forEach((item: any) => {
+        if (item.size) {
+          initialMap[item.size] = {
+            chest: String(item.chest ?? ""),
+            length: String(item.length ?? ""),
+            shoulder: item.shoulder != null ? String(item.shoulder) : "",
+          };
+        }
+      });
+      return initialMap;
+    }
+
+    const isHoodie = initialProduct?.product_type === "hoodie";
+    const defaults = isHoodie ? DEFAULT_HOODIE_MEASUREMENTS : DEFAULT_TSHIRT_MEASUREMENTS;
+    return { ...defaults };
+  });
+
+  const updateSizeGuideField = (
+    size: string,
+    field: "chest" | "length" | "shoulder",
+    val: string
+  ) => {
+    setSizeGuideMap((prev) => ({
+      ...prev,
+      [size]: {
+        chest: prev[size]?.chest ?? "",
+        length: prev[size]?.length ?? "",
+        shoulder: prev[size]?.shoulder ?? "",
+        [field]: val,
+      },
+    }));
+  };
+
+  const handleProductTypeChange = (newType: "tshirt" | "hoodie") => {
+    setProductType(newType);
+    if (newType === "hoodie") {
+      setSizeGuideMap((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((s) => {
+          if (!next[s]?.shoulder && DEFAULT_HOODIE_MEASUREMENTS[s]?.shoulder) {
+            next[s] = {
+              ...next[s],
+              shoulder: DEFAULT_HOODIE_MEASUREMENTS[s].shoulder,
+            };
+          }
+        });
+        return next;
+      });
+    }
+  };
+
   // Bullet points
   const [features, setFeatures] = useState<string[]>(initialProduct?.features ?? []);
   const [washCare, setWashCare] = useState<string[]>(initialProduct?.wash_care ?? []);
@@ -240,6 +324,20 @@ export function ProductForm({ initialProduct }: ProductFormProps = {}) {
       ...variantsList,
       { size: trimmed, stock: parseInt(newSizeStock, 10) || 0 },
     ]);
+    if (!sizeGuideMap[trimmed]) {
+      const fallback =
+        (productType === "hoodie"
+          ? DEFAULT_HOODIE_MEASUREMENTS[trimmed]
+          : DEFAULT_TSHIRT_MEASUREMENTS[trimmed]) || { chest: "", length: "", shoulder: "" };
+      setSizeGuideMap((prev) => ({
+        ...prev,
+        [trimmed]: {
+          chest: fallback.chest || "",
+          length: fallback.length || "",
+          shoulder: fallback.shoulder || "",
+        },
+      }));
+    }
     setNewSizeName("");
     setNewSizeStock("100");
   };
@@ -277,6 +375,17 @@ export function ProductForm({ initialProduct }: ProductFormProps = {}) {
         resolvedCategoryId = (cat as any).id;
       }
 
+      // Prepare size_chart payload for all current variants
+      const sizeChartPayload = variantsList.map((v) => {
+        const m = sizeGuideMap[v.size] || { chest: "", length: "", shoulder: "" };
+        return {
+          size: v.size,
+          chest: m.chest || "",
+          length: m.length || "",
+          ...(productType === "hoodie" ? { shoulder: m.shoulder || "" } : {}),
+        };
+      });
+
       const productPayload = {
         name,
         slug,
@@ -287,6 +396,8 @@ export function ProductForm({ initialProduct }: ProductFormProps = {}) {
         is_active: isActive,
         features: features.length > 0 ? features : null,
         wash_care: washCare.length > 0 ? washCare : null,
+        product_type: productType,
+        size_chart: sizeChartPayload.length > 0 ? sizeChartPayload : null,
         updated_at: new Date().toISOString(),
       };
 
@@ -736,6 +847,155 @@ export function ProductForm({ initialProduct }: ProductFormProps = {}) {
           >
             + Add Size
           </button>
+        </div>
+
+        {/* ── Type & Size Guide Sub-Block ──────────────── */}
+        <div style={{ marginTop: "12px", paddingTop: "20px", borderTop: "2px dashed #e5e5e5", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div>
+            <label style={labelStyle}>Product Apparel Type</label>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button
+                type="button"
+                onClick={() => handleProductTypeChange("tshirt")}
+                style={{
+                  padding: "10px 22px",
+                  border: "2px solid #000",
+                  background: productType === "tshirt" ? "#000" : "#fff",
+                  color: productType === "tshirt" ? "#fff" : "#000",
+                  fontWeight: 800,
+                  fontSize: "0.85rem",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                }}
+              >
+                {productType === "tshirt" ? "✓ T-Shirt" : "T-Shirt"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleProductTypeChange("hoodie")}
+                style={{
+                  padding: "10px 22px",
+                  border: "2px solid #000",
+                  background: productType === "hoodie" ? "#000" : "#fff",
+                  color: productType === "hoodie" ? "#fff" : "#000",
+                  fontWeight: 800,
+                  fontSize: "0.85rem",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                }}
+              >
+                {productType === "hoodie" ? "✓ Hoodie" : "Hoodie"}
+              </button>
+            </div>
+            <p style={{ fontSize: "0.75rem", color: "#666", marginTop: "6px" }}>
+              {productType === "hoodie"
+                ? "Hoodie mode: Size guide includes Chest, Length, and Shoulder columns."
+                : "T-Shirt mode: Size guide includes Chest and Length columns."}
+            </p>
+          </div>
+
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px", flexWrap: "wrap", gap: "6px" }}>
+              <label style={{ ...labelStyle, margin: 0 }}>
+                Size Guide Measurements (Inches)
+              </label>
+              <span style={{ fontSize: "0.75rem", color: "#666" }}>
+                Manual measurements for each size
+              </span>
+            </div>
+
+            <div style={{ border: "2px solid #000", background: "#fff", overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#000", color: "#fff" }}>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", width: "120px" }}>
+                      Size
+                    </th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                      Chest (in)
+                    </th>
+                    <th style={{ padding: "10px 14px", textAlign: "left", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                      Length (in)
+                    </th>
+                    {productType === "hoodie" && (
+                      <th style={{ padding: "10px 14px", textAlign: "left", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                        Shoulder (in)
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {variantsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={productType === "hoodie" ? 4 : 3} style={{ padding: "16px", textAlign: "center", color: "#888", fontSize: "0.85rem" }}>
+                        No sizes added. Add sizes in the table above first.
+                      </td>
+                    </tr>
+                  ) : (
+                    variantsList.map((v) => {
+                      const m = sizeGuideMap[v.size] || { chest: "", length: "", shoulder: "" };
+                      return (
+                        <tr key={v.size} style={{ borderBottom: "1px solid #eee" }}>
+                          <td style={{ padding: "10px 14px", fontWeight: 800, fontSize: "0.95rem" }}>
+                            {v.size}
+                          </td>
+                          <td style={{ padding: "10px 14px" }}>
+                            <input
+                              type="text"
+                              value={m.chest}
+                              onChange={(e) => updateSizeGuideField(v.size, "chest", e.target.value)}
+                              placeholder="e.g. 46"
+                              style={{
+                                width: "110px",
+                                padding: "6px 10px",
+                                border: "1px solid #000",
+                                fontSize: "0.9rem",
+                                fontWeight: 700,
+                              }}
+                            />
+                          </td>
+                          <td style={{ padding: "10px 14px" }}>
+                            <input
+                              type="text"
+                              value={m.length}
+                              onChange={(e) => updateSizeGuideField(v.size, "length", e.target.value)}
+                              placeholder="e.g. 24"
+                              style={{
+                                width: "110px",
+                                padding: "6px 10px",
+                                border: "1px solid #000",
+                                fontSize: "0.9rem",
+                                fontWeight: 700,
+                              }}
+                            />
+                          </td>
+                          {productType === "hoodie" && (
+                            <td style={{ padding: "10px 14px" }}>
+                              <input
+                                type="text"
+                                value={m.shoulder || ""}
+                                onChange={(e) => updateSizeGuideField(v.size, "shoulder", e.target.value)}
+                                placeholder="e.g. 21"
+                                style={{
+                                  width: "110px",
+                                  padding: "6px 10px",
+                                  border: "1px solid #000",
+                                  fontSize: "0.9rem",
+                                  fontWeight: 700,
+                                }}
+                              />
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
