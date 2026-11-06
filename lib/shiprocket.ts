@@ -420,7 +420,7 @@ export function buildShiprocketPayload(order: {
     ? Number(process.env.SHIPROCKET_CHANNEL_ID)
     : undefined;
   const pickupLocation =
-    process.env.SHIPROCKET_PICKUP_LOCATION || "Primary";
+    process.env.SHIPROCKET_PICKUP_LOCATION || "home";
 
   // Parse name into first and last name for Shiprocket requirements
   const rawFullName = (addr.full_name || addr.fullName || "Customer").trim();
