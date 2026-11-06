@@ -75,6 +75,7 @@ export async function POST(
       shipping_fee: order.shipping_fee,
       total: order.total,
       shipping_address: order.shipping_address,
+      guest_email: order.guest_email,
       order_items: order.order_items || [],
     });
 

@@ -46,7 +46,7 @@ export interface ShiprocketOrderPayload {
 
   // Billing (same as shipping for most DTC)
   billing_customer_name: string;
-  billing_last_name?: string;
+  billing_last_name: string;
   billing_address: string;
   billing_address_2?: string;
   billing_city: string;
@@ -406,6 +406,7 @@ export function buildShiprocketPayload(order: {
   shipping_fee: number;
   total: number;
   shipping_address: Record<string, unknown> | null;
+  guest_email?: string | null;
   order_items: Array<{
     product_name: string;
     size?: string | null;
@@ -421,6 +422,18 @@ export function buildShiprocketPayload(order: {
   const pickupLocation =
     process.env.SHIPROCKET_PICKUP_LOCATION || "Primary";
 
+  // Parse name into first and last name for Shiprocket requirements
+  const rawFullName = (addr.full_name || addr.fullName || "Customer").trim();
+  const nameParts = rawFullName.split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] || "Customer";
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ".";
+
+  // Clean phone to ensure 10 digits
+  const rawPhone = addr.phone || "";
+  const cleanPhone = rawPhone.replace(/\D/g, "").slice(-10) || "9999999999";
+
+  const email = addr.email || order.guest_email || "support@6xtn.in";
+
   // Format date for Shiprocket: "YYYY-MM-DD HH:MM"
   const orderDate = new Date(order.created_at)
     .toISOString()
@@ -432,16 +445,27 @@ export function buildShiprocketPayload(order: {
     order_date: orderDate,
     channel_id: channelId,
     pickup_location: pickupLocation,
-    billing_customer_name: addr.full_name || addr.fullName || "Customer",
-    billing_address: addr.line1 || addr.address || "",
+    billing_customer_name: firstName,
+    billing_last_name: lastName,
+    billing_address: addr.line1 || addr.address || "Street Address",
     billing_address_2: addr.line2 || "",
-    billing_city: addr.city || "",
-    billing_pincode: addr.pincode || addr.zip || "",
-    billing_state: addr.state || "",
+    billing_city: addr.city || "City",
+    billing_pincode: addr.pincode || addr.zip || "560001",
+    billing_state: addr.state || "Karnataka",
     billing_country: addr.country || "India",
-    billing_email: addr.email || "",
-    billing_phone: addr.phone || "",
+    billing_email: email,
+    billing_phone: cleanPhone,
     shipping_is_billing: true,
+    shipping_customer_name: firstName,
+    shipping_last_name: lastName,
+    shipping_address: addr.line1 || addr.address || "Street Address",
+    shipping_address_2: addr.line2 || "",
+    shipping_city: addr.city || "City",
+    shipping_pincode: addr.pincode || addr.zip || "560001",
+    shipping_state: addr.state || "Karnataka",
+    shipping_country: addr.country || "India",
+    shipping_email: email,
+    shipping_phone: cleanPhone,
     payment_method: "Prepaid",
     sub_total: order.subtotal,
     shipping_charges: order.shipping_fee,
@@ -457,6 +481,6 @@ export function buildShiprocketPayload(order: {
     length: 30,
     breadth: 25,
     height: 5,
-    weight: 0.5 * (order.order_items.reduce((s, i) => s + i.quantity, 0)),
+    weight: Math.max(0.2, 0.4 * (order.order_items.reduce((s, i) => s + i.quantity, 0))),
   };
 }
