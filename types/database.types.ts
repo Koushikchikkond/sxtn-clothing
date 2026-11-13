@@ -337,6 +337,54 @@ export type Database = {
         };
         Relationships: [];
       };
+
+      order_returns: {
+        Row: {
+          id:             string;
+          order_id:       string;
+          order_item_id:  string | null;
+          user_id:        string | null;
+          type:           "return" | "exchange";
+          status:         "requested" | "approved" | "rejected" | "picked_up" | "completed";
+          product_name:   string;
+          original_size:  string | null;
+          requested_size: string | null;
+          reason:         string;
+          customer_notes: string | null;
+          admin_notes:    string | null;
+          return_awb:     string | null;
+          return_courier: string | null;
+          created_at:     string;
+          updated_at:     string;
+        };
+        Insert: {
+          id?:             string;
+          order_id:        string;
+          order_item_id?:  string | null;
+          user_id?:        string | null;
+          type:            "return" | "exchange";
+          status?:         "requested" | "approved" | "rejected" | "picked_up" | "completed";
+          product_name:    string;
+          original_size?:  string | null;
+          requested_size?: string | null;
+          reason:          string;
+          customer_notes?: string | null;
+          admin_notes?:    string | null;
+          return_awb?:     string | null;
+          return_courier?: string | null;
+          created_at?:     string;
+          updated_at?:     string;
+        };
+        Update: {
+          status?:         "requested" | "approved" | "rejected" | "picked_up" | "completed";
+          requested_size?: string | null;
+          admin_notes?:    string | null;
+          return_awb?:     string | null;
+          return_courier?: string | null;
+          updated_at?:     string;
+        };
+        Relationships: [];
+      };
     };
 
     Views: Record<string, never>;
@@ -370,5 +418,8 @@ export type Address        = Tables<"addresses">;
 export type Order          = Tables<"orders">;
 export type OrderItem      = Tables<"order_items">;
 export type Wishlist       = Tables<"wishlists">;
+export type OrderReturn    = Tables<"order_returns">;
 
-export type OrderStatus = Order["status"];
+export type OrderStatus       = Order["status"];
+export type OrderReturnType   = OrderReturn["type"];
+export type OrderReturnStatus = OrderReturn["status"];

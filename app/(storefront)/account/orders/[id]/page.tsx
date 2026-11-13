@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import React from "react";
-import type { Order, OrderItem } from "@/types/database.types";
+import type { Order, OrderItem, OrderReturn } from "@/types/database.types";
 import { CustomerOrderActions } from "@/components/account/customer-order-actions";
 
 const STATUS_COLOURS: Record<string, string> = {
@@ -42,6 +42,13 @@ export default async function OrderDetailPage({
     .eq("order_id", id);
 
   const items = (itemsRaw as unknown as OrderItem[]) ?? [];
+
+  const { data: returnsRaw } = await (supabase.from("order_returns") as any)
+    .select("*")
+    .eq("order_id", id)
+    .order("created_at", { ascending: false });
+
+  const existingReturns = (returnsRaw as unknown as OrderReturn[]) ?? [];
 
   const address = order.shipping_address as Record<string, string> | null;
   const currentStep = STATUS_STEPS.indexOf(order.status);
@@ -89,6 +96,8 @@ export default async function OrderDetailPage({
         awbNumber={(order as any).awb_number}
         courierName={(order as any).courier_name}
         trackingUrl={(order as any).tracking_url}
+        items={items}
+        existingReturns={existingReturns}
       />
 
       {/* Progress Bar */}

@@ -2,7 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Ban, CheckCircle2, Loader2, Truck, ExternalLink } from "lucide-react";
+import {
+  AlertCircle,
+  Ban,
+  CheckCircle2,
+  Loader2,
+  Truck,
+  ExternalLink,
+  RotateCcw,
+  ArrowLeftRight,
+  Clock,
+  XCircle,
+} from "lucide-react";
+import type { OrderItem, OrderReturn } from "@/types/database.types";
 
 interface CustomerOrderActionsProps {
   orderId: string;
@@ -12,6 +24,8 @@ interface CustomerOrderActionsProps {
   awbNumber?: string | null;
   courierName?: string | null;
   trackingUrl?: string | null;
+  items?: OrderItem[];
+  existingReturns?: OrderReturn[];
 }
 
 const CUSTOMER_CANCEL_REASONS = [
@@ -23,6 +37,18 @@ const CUSTOMER_CANCEL_REASONS = [
   "Other reason",
 ];
 
+const RETURN_EXCHANGE_REASONS = [
+  "Size too small / tight fit",
+  "Size too large / loose fit",
+  "Defective or damaged item received",
+  "Quality or fabric not as expected",
+  "Received wrong item or incorrect size",
+  "Changed mind / style does not suit",
+  "Other reason",
+];
+
+const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+
 export function CustomerOrderActions({
   orderId,
   status,
@@ -31,29 +57,58 @@ export function CustomerOrderActions({
   awbNumber,
   courierName,
   trackingUrl: initialTrackingUrl,
+  items = [],
+  existingReturns = [],
 }: CustomerOrderActionsProps) {
   const router = useRouter();
+
+  // Cancel order state
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [reason, setReason] = useState(CUSTOMER_CANCEL_REASONS[0]);
+  const [cancelReason, setCancelReason] = useState(CUSTOMER_CANCEL_REASONS[0]);
   const [customNote, setCustomNote] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
+
+  // Return & Exchange state
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnType, setReturnType] = useState<"exchange" | "return">("exchange");
+  const [selectedItemId, setSelectedItemId] = useState<string>(items[0]?.id || "");
+  const [requestedSize, setRequestedSize] = useState<string>("L");
+  const [returnReason, setReturnReason] = useState(RETURN_EXCHANGE_REASONS[0]);
+  const [returnNotes, setReturnNotes] = useState("");
+  const [returnLoading, setReturnLoading] = useState(false);
+  const [returnError, setReturnError] = useState<string | null>(null);
+  const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
 
   const isCancellable = status === "pending" || status === "paid";
   const isCancelled = status === "cancelled";
+  const isDelivered = status === "delivered";
+
+  // Check active return/exchange request
+  const activeReturn =
+    existingReturns.find((r) => ["requested", "approved", "picked_up"].includes(r.status)) ||
+    existingReturns[0];
+
+  const canRequestReturn =
+    isDelivered && (!activeReturn || activeReturn.status === "rejected");
 
   // Parse tracking info if present in notes or direct fields
   const isShipped = status === "shipped" || status === "delivered" || status === "confirmed";
-  const hasTracking = !!awbNumber || !!initialTrackingUrl || (notes && (notes.includes("Tracking:") || notes.includes("Courier:")));
-  const trackingLink = initialTrackingUrl || (awbNumber ? `https://shiprocket.co/tracking/${awbNumber}` : null);
+  const hasTracking =
+    !!awbNumber ||
+    !!initialTrackingUrl ||
+    (notes && (notes.includes("Tracking:") || notes.includes("Courier:")));
+  const trackingLink =
+    initialTrackingUrl || (awbNumber ? `https://shiprocket.co/tracking/${awbNumber}` : null);
 
   async function handleConfirmCancel() {
-    setLoading(true);
-    setError(null);
+    setCancelLoading(true);
+    setCancelError(null);
 
     try {
-      const finalReason = reason === "Other reason" && customNote.trim() ? customNote.trim() : reason;
+      const finalReason =
+        cancelReason === "Other reason" && customNote.trim() ? customNote.trim() : cancelReason;
       const res = await fetch(`/api/orders/${orderId}/cancel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,13 +123,51 @@ export function CustomerOrderActions({
         throw new Error(data.error || "Failed to cancel order.");
       }
 
-      setSuccess("Your order has been cancelled. A confirmation email has been sent.");
+      setCancelSuccess("Your order has been cancelled. A confirmation email has been sent.");
       setShowCancelModal(false);
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error cancelling order");
+      setCancelError(err instanceof Error ? err.message : "Error cancelling order");
     } finally {
-      setLoading(false);
+      setCancelLoading(false);
+    }
+  }
+
+  async function handleConfirmReturn() {
+    setReturnLoading(true);
+    setReturnError(null);
+
+    try {
+      const selectedItem = items.find((i) => i.id === selectedItemId) || items[0];
+
+      const res = await fetch(`/api/orders/${orderId}/returns`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: returnType,
+          orderItemId: selectedItem?.id || null,
+          productName: selectedItem?.product_name || "Apparel Item",
+          originalSize: selectedItem?.size || null,
+          requestedSize: returnType === "exchange" ? requestedSize : null,
+          reason: returnReason,
+          customerNotes: returnNotes.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit request.");
+      }
+
+      setReturnSuccess(
+        `Your ${returnType} request has been submitted. Our team will review and contact you shortly.`
+      );
+      setShowReturnModal(false);
+      router.refresh();
+    } catch (err: unknown) {
+      setReturnError(err instanceof Error ? err.message : "Error submitting request");
+    } finally {
+      setReturnLoading(false);
     }
   }
 
@@ -101,6 +194,137 @@ export function CustomerOrderActions({
                 automatically credited to your original payment method in 5–7 business days. For
                 support, write to{" "}
                 <a href="mailto:6xtn.in@gmail.com" className="text-white underline hover:text-white/80">
+                  6xtn.in@gmail.com
+                </a>
+                .
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Return or Exchange Request Banner */}
+      {activeReturn && (
+        <div
+          className={`border p-5 rounded-none ${
+            activeReturn.status === "completed"
+              ? "border-emerald-500/30 bg-emerald-950/20"
+              : activeReturn.status === "rejected"
+              ? "border-red-500/30 bg-red-950/20"
+              : activeReturn.status === "approved" || activeReturn.status === "picked_up"
+              ? "border-sky-500/30 bg-sky-950/20"
+              : "border-amber-500/30 bg-amber-950/20"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {activeReturn.status === "completed" ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            ) : activeReturn.status === "rejected" ? (
+              <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            ) : activeReturn.status === "approved" || activeReturn.status === "picked_up" ? (
+              <Truck className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
+            ) : (
+              <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            )}
+
+            <div className="space-y-2 flex-1">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p
+                  className={`text-xs uppercase tracking-widest font-bold ${
+                    activeReturn.status === "completed"
+                      ? "text-emerald-400"
+                      : activeReturn.status === "rejected"
+                      ? "text-red-400"
+                      : activeReturn.status === "approved" || activeReturn.status === "picked_up"
+                      ? "text-sky-400"
+                      : "text-amber-400"
+                  }`}
+                >
+                  {activeReturn.type === "exchange"
+                    ? "Size Exchange Request"
+                    : "Return & Refund Request"}
+                </p>
+
+                <span
+                  className="text-[10px] uppercase tracking-widest font-mono px-2.5 py-0.5 border"
+                  style={{
+                    color:
+                      activeReturn.status === "completed"
+                        ? "#10b981"
+                        : activeReturn.status === "rejected"
+                        ? "#ef4444"
+                        : activeReturn.status === "approved" || activeReturn.status === "picked_up"
+                        ? "#0284c7"
+                        : "#f59e0b",
+                    borderColor:
+                      activeReturn.status === "completed"
+                        ? "#10b98155"
+                        : activeReturn.status === "rejected"
+                        ? "#ef444455"
+                        : activeReturn.status === "approved" || activeReturn.status === "picked_up"
+                        ? "#0284c755"
+                        : "#f59e0b55",
+                  }}
+                >
+                  Status: {activeReturn.status.replace("_", " ")}
+                </span>
+              </div>
+
+              <div className="text-sm text-white/90 space-y-1">
+                <p>
+                  <span className="text-white/50 text-xs">Item: </span>
+                  <strong>{activeReturn.product_name}</strong>
+                  {activeReturn.original_size && (
+                    <span className="text-white/50 text-xs">
+                      {" "}
+                      (Size: {activeReturn.original_size})
+                    </span>
+                  )}
+                </p>
+
+                {activeReturn.type === "exchange" && activeReturn.requested_size && (
+                  <p className="text-xs text-white/80">
+                    <span className="text-white/50">Requested Replacement Size: </span>
+                    <span className="font-mono font-bold text-amber-300">
+                      {activeReturn.requested_size}
+                    </span>
+                  </p>
+                )}
+
+                <p className="text-xs text-white/80">
+                  <span className="text-white/50">Reason: </span>
+                  {activeReturn.reason}
+                </p>
+
+                {activeReturn.customer_notes && (
+                  <p className="text-xs text-white/60">
+                    <span className="text-white/40">Your note: </span>
+                    {activeReturn.customer_notes}
+                  </p>
+                )}
+
+                {activeReturn.admin_notes && (
+                  <div className="mt-2 pt-2 border-t border-white/10 text-xs text-white/80">
+                    <span className="text-white/40 uppercase tracking-widest text-[10px] block">
+                      Admin Update:
+                    </span>
+                    {activeReturn.admin_notes}
+                  </div>
+                )}
+
+                {activeReturn.return_awb && (
+                  <div className="mt-2 pt-1.5 border-t border-white/10 text-xs text-white/90">
+                    <span className="text-white/50">Reverse Courier: </span>
+                    <strong>{activeReturn.return_courier || "Shiprocket Partner"}</strong> · AWB:{" "}
+                    <span className="font-mono text-sky-300">{activeReturn.return_awb}</span>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-[11px] text-white/40 pt-1">
+                Submitted on {new Date(activeReturn.created_at).toLocaleDateString("en-IN")}. If you
+                have questions, reach us at{" "}
+                <a href="mailto:6xtn.in@gmail.com" className="text-white/70 underline">
                   6xtn.in@gmail.com
                 </a>
                 .
@@ -149,9 +373,20 @@ export function CustomerOrderActions({
         </div>
       )}
 
-      {/* Cancel Action Button */}
-      {isCancellable && (
-        <div className="flex justify-end">
+      {/* Action Buttons: Cancel or Return/Exchange */}
+      <div className="flex justify-end items-center gap-3">
+        {canRequestReturn && (
+          <button
+            type="button"
+            onClick={() => setShowReturnModal(true)}
+            className="text-xs uppercase tracking-widest font-bold px-4 py-2 border border-white/30 text-white hover:bg-white hover:text-black transition-colors flex items-center gap-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Request Return / Exchange
+          </button>
+        )}
+
+        {isCancellable && (
           <button
             type="button"
             onClick={() => setShowCancelModal(true)}
@@ -160,13 +395,20 @@ export function CustomerOrderActions({
             <Ban className="w-3.5 h-3.5" />
             Cancel Order
           </button>
+        )}
+      </div>
+
+      {cancelSuccess && (
+        <div className="p-3 border border-green-500/30 bg-green-950/20 text-green-300 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-green-400" />
+          <span>{cancelSuccess}</span>
         </div>
       )}
 
-      {success && (
+      {returnSuccess && (
         <div className="p-3 border border-green-500/30 bg-green-950/20 text-green-300 text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-green-400" />
-          <span>{success}</span>
+          <span>{returnSuccess}</span>
         </div>
       )}
 
@@ -193,8 +435,8 @@ export function CustomerOrderActions({
                   Cancellation Reason *
                 </label>
                 <select
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
                   className="w-full bg-black border border-white/20 p-2.5 text-xs text-white focus:outline-none focus:border-white/50"
                 >
                   {CUSTOMER_CANCEL_REASONS.map((r) => (
@@ -205,7 +447,7 @@ export function CustomerOrderActions({
                 </select>
               </div>
 
-              {reason === "Other reason" && (
+              {cancelReason === "Other reason" && (
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1.5 font-bold">
                     Additional Details
@@ -221,7 +463,7 @@ export function CustomerOrderActions({
               )}
             </div>
 
-            {error && <p className="text-xs text-red-400 pt-1">{error}</p>}
+            {cancelError && <p className="text-xs text-red-400 pt-1">{cancelError}</p>}
 
             <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
               <button
@@ -233,12 +475,186 @@ export function CustomerOrderActions({
               </button>
               <button
                 type="button"
-                disabled={loading}
+                disabled={cancelLoading}
                 onClick={handleConfirmCancel}
                 className="px-4 py-2 text-xs uppercase tracking-widest font-bold bg-red-600 text-white hover:bg-red-500 disabled:opacity-50 transition-colors flex items-center gap-1.5"
               >
-                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {cancelLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Confirm Cancellation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return & Exchange Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0e0e0e] border border-white/20 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+              <ArrowLeftRight className="w-4 h-4 text-white" />
+              <h3 className="font-display text-lg uppercase tracking-wider text-white">
+                Request Return or Exchange
+              </h3>
+            </div>
+
+            {/* Type Switcher */}
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-2 font-bold">
+                Select Request Type *
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReturnType("exchange")}
+                  className={`p-3 border text-left transition-colors flex items-center gap-2.5 ${
+                    returnType === "exchange"
+                      ? "border-white bg-white text-black"
+                      : "border-white/15 bg-black text-white hover:border-white/40"
+                  }`}
+                >
+                  <ArrowLeftRight className="w-4 h-4 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider">Exchange Size</div>
+                    <div
+                      className={`text-[10px] ${
+                        returnType === "exchange" ? "text-black/70" : "text-white/50"
+                      }`}
+                    >
+                      Swap for another size
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setReturnType("return")}
+                  className={`p-3 border text-left transition-colors flex items-center gap-2.5 ${
+                    returnType === "return"
+                      ? "border-white bg-white text-black"
+                      : "border-white/15 bg-black text-white hover:border-white/40"
+                  }`}
+                >
+                  <RotateCcw className="w-4 h-4 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider">Return Item</div>
+                    <div
+                      className={`text-[10px] ${
+                        returnType === "return" ? "text-black/70" : "text-white/50"
+                      }`}
+                    >
+                      Refund to payment source
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Item Selection */}
+            {items.length > 0 && (
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1.5 font-bold">
+                  Select Item to {returnType === "exchange" ? "Exchange" : "Return"} *
+                </label>
+                <select
+                  value={selectedItemId}
+                  onChange={(e) => setSelectedItemId(e.target.value)}
+                  className="w-full bg-black border border-white/20 p-2.5 text-xs text-white focus:outline-none focus:border-white/50"
+                >
+                  {items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.product_name} {item.size ? `(Size: ${item.size})` : ""}{" "}
+                      {item.quantity > 1 ? `× ${item.quantity}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* If Exchange: Requested Replacement Size */}
+            {returnType === "exchange" && (
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1.5 font-bold">
+                  Desired Replacement Size *
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {AVAILABLE_SIZES.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => setRequestedSize(sz)}
+                      className={`py-2 text-xs font-bold font-mono border transition-colors ${
+                        requestedSize === sz
+                          ? "bg-white text-black border-white"
+                          : "bg-black text-white border-white/20 hover:border-white/50"
+                      }`}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reason */}
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1.5 font-bold">
+                Reason *
+              </label>
+              <select
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                className="w-full bg-black border border-white/20 p-2.5 text-xs text-white focus:outline-none focus:border-white/50"
+              >
+                {RETURN_EXCHANGE_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Customer Notes */}
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1.5 font-bold">
+                Additional Comments / Fit Notes (Optional)
+              </label>
+              <textarea
+                rows={2}
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="Share any details about fit or condition..."
+                className="w-full bg-black border border-white/20 p-2.5 text-xs text-white focus:outline-none focus:border-white/50"
+              />
+            </div>
+
+            {/* Policy Note */}
+            <div className="p-3 bg-white/5 border border-white/10 text-[11px] text-white/60 space-y-1">
+              <p className="font-semibold text-white/80">Policy Reminder:</p>
+              <p>
+                Garments must be unworn, unwashed, and in original condition with brand tags intact.
+                Once approved, a reverse courier pickup will be initiated at your shipping address.
+              </p>
+            </div>
+
+            {returnError && <p className="text-xs text-red-400">{returnError}</p>}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowReturnModal(false)}
+                className="px-4 py-2 text-xs uppercase tracking-widest text-white/50 hover:text-white border border-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={returnLoading}
+                onClick={handleConfirmReturn}
+                className="px-5 py-2 text-xs uppercase tracking-widest font-bold bg-white text-black hover:bg-white/90 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+              >
+                {returnLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Submit {returnType === "exchange" ? "Exchange" : "Return"}
               </button>
             </div>
           </div>

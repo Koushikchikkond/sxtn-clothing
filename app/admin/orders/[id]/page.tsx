@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
+import { OrderReturnManager } from "@/components/admin/order-return-manager";
+import type { OrderReturn } from "@/types/database.types";
 
 export const metadata = { title: "Order Detail — 6XTN Admin" };
 
@@ -20,6 +22,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     .from("order_items")
     .select("*")
     .eq("order_id", id);
+
+  const { data: returns } = await (supabase.from("order_returns") as any)
+    .select("*")
+    .eq("order_id", id)
+    .order("created_at", { ascending: false });
 
   if (!order) {
     return (
@@ -58,6 +65,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         courierName={(order as any).courier_name}
         trackingUrl={(order as any).tracking_url}
       />
+
+      {returns && returns.length > 0 && (
+        <OrderReturnManager orderId={(order as any).id} initialReturns={returns as OrderReturn[]} />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
         {/* Shipping Address */}

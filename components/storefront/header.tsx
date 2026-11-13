@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/collections/all", label: "Shop All" },
-  { href: "/collections/t-shirts", label: "T-Shirts" },
+  { href: "/collections/t-shirts", label: "Tees" },
   { href: "/account", label: "Account" },
   { href: "/account/orders", label: "Orders" },
   { href: "/account/wishlist", label: "Wishlist" },

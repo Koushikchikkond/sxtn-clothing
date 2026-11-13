@@ -20,12 +20,42 @@ export default async function AdminOrdersPage() {
     .select("id, status, total, subtotal, shipping_fee, created_at, user_id, guest_email, shipping_address")
     .order("created_at", { ascending: false });
 
+  const { data: allReturns } = await (supabase.from("order_returns") as any)
+    .select("id, order_id, type, status");
+
+  const returnsByOrderId = ((allReturns as any[]) || []).reduce((acc: Record<string, any>, item: any) => {
+    if (!acc[item.order_id] || item.status === "requested") {
+      acc[item.order_id] = item;
+    }
+    return acc;
+  }, {});
+
+  const pendingReturnCount = ((allReturns as any[]) || []).filter(
+    (r) => r.status === "requested"
+  ).length;
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "12px" }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 900, letterSpacing: "0.04em", textTransform: "uppercase", color: "#000" }}>
           Orders ({orders?.length ?? 0})
         </h1>
+        {pendingReturnCount > 0 && (
+          <span
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              padding: "4px 12px",
+              backgroundColor: "#fef3c7",
+              color: "#92400e",
+              border: "1px solid #f59e0b",
+            }}
+          >
+            ⚠️ {pendingReturnCount} Pending Return / Exchange {pendingReturnCount === 1 ? "Request" : "Requests"}
+          </span>
+        )}
       </div>
 
       {!orders || orders.length === 0 ? (
@@ -66,9 +96,27 @@ export default async function AdminOrdersPage() {
                       {new Date(order.created_at).toLocaleDateString("en-IN")}
                     </td>
                     <td style={{ padding: "12px 16px" }}>
-                      <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 8px", backgroundColor: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}>
-                        {order.status}
-                      </span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
+                        <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 8px", backgroundColor: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}>
+                          {order.status}
+                        </span>
+                        {returnsByOrderId[order.id] && (
+                          <span
+                            style={{
+                              fontSize: "0.58rem",
+                              fontWeight: 800,
+                              letterSpacing: "0.05em",
+                              textTransform: "uppercase",
+                              padding: "2px 6px",
+                              backgroundColor: returnsByOrderId[order.id].type === "exchange" ? "#fef3c7" : "#ede9fe",
+                              color: returnsByOrderId[order.id].type === "exchange" ? "#92400e" : "#5b21b6",
+                              border: `1px solid ${returnsByOrderId[order.id].type === "exchange" ? "#f59e0b" : "#8b5cf6"}`,
+                            }}
+                          >
+                            {returnsByOrderId[order.id].type}: {returnsByOrderId[order.id].status.replace("_", " ")}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: "12px 16px", fontSize: "0.85rem", fontWeight: 700, color: "#000" }}>
                       ₹{order.total?.toLocaleString("en-IN")}

@@ -36,7 +36,7 @@ export function Footer() {
             <ul className="space-y-3">
               {[
                 { href: "/collections/all", label: "Shop All" },
-                { href: "/collections/t-shirts", label: "T-Shirts" },
+                { href: "/collections/t-shirts", label: "Tees" },
                 { href: "/account/wishlist", label: "Wishlist" },
               ].map((l) => (
                 <li key={l.href}>
@@ -103,7 +103,7 @@ export function Footer() {
             <ul className="space-y-3">
               {[
                 { href: "/collections/all", label: "Shop All" },
-                { href: "/collections/t-shirts", label: "T-Shirts" },
+                { href: "/collections/t-shirts", label: "Tees" },
                 { href: "/account/wishlist", label: "Wishlist" },
               ].map((l) => (
                 <li key={l.href}>
