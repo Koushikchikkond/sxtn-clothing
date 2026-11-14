@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-14-google-only-authentication|2026-11-14 Google-Only One-Click Authentication (Remove Email & Password)]]
 - [[2026-11-14-admin-returns-exchanges-sidebar-page|2026-11-14 Admin Sidebar Returns & Exchanges Navigation and Dedicated Management Page]]
 - [[2026-11-13-return-exchange-customer-and-menu-tees|2026-11-13 Customer Return & Exchange Flow and Navigation Menu Tees Update]]
 - [[2026-11-06-admin-product-type-and-size-guide|2026-11-06 Admin Product Type (T-Shirt / Hoodie) and Dynamic Size Guide Configuration]]

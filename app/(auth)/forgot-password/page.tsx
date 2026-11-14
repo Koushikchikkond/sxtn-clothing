@@ -1,115 +1,44 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
-import { ArrowRight, ArrowLeft, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const supabase = createClient();
-
-  const [email, setEmail]   = useState("");
-  const [error, setError]   = useState<string | null>(null);
-  const [sent, setSent]     = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    setSent(true);
-    setLoading(false);
-  }
-
-  if (sent) {
-    return (
-      <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4 text-center">
-        <div className="w-16 h-16 rounded-full border border-white/20 flex items-center justify-center mb-6">
-          <Mail className="h-7 w-7 text-white/60" />
-        </div>
-        <h1 className="font-display text-4xl uppercase tracking-widest mb-4">Check your inbox</h1>
-        <p className="text-white/50 text-sm max-w-xs leading-relaxed">
-          We&apos;ve sent a password reset link to{" "}
-          <strong className="text-white">{email}</strong>.
-          The link expires in 1 hour.
-        </p>
-        <Link
-          href="/login"
-          className="mt-10 flex items-center gap-2 text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-3 w-3" /> Back to Sign In
-        </Link>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4">
+    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4 text-center">
       {/* Logo */}
-      <Link href="/" className="mb-12">
-        <Image src="/brand-logo.svg" alt="6XTN" width={80} height={32} className="h-10 w-auto" />
+      <Link href="/" className="mb-8">
+        <Image src="/brand-logo.svg" alt="6XTN" width={90} height={36} className="h-10 w-auto" />
       </Link>
 
       <div className="w-full max-w-sm">
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-white/40 hover:text-white/70 transition-colors mb-8"
-        >
-          <ArrowLeft className="h-3 w-3" /> Back to Sign In
-        </Link>
+        <div className="w-14 h-14 rounded-full border border-white/20 flex items-center justify-center mx-auto mb-6">
+          <ShieldCheck className="h-7 w-7 text-white" />
+        </div>
 
-        <h1 className="font-display text-5xl uppercase tracking-widest mb-2">Reset Password</h1>
-        <p className="text-white/50 text-sm mb-10 leading-relaxed">
-          Enter your email and we&apos;ll send you a link to reset your password.
+        <h1 className="font-display text-3xl sm:text-4xl uppercase tracking-widest mb-3">
+          No Password Needed
+        </h1>
+        <p className="text-white/60 text-xs sm:text-sm leading-relaxed mb-8">
+          6XTN uses secure Google authentication. You never need to remember or reset a password.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-xs uppercase tracking-widest text-white/50 mb-2">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 text-sm focus:outline-none focus:border-white/40 transition-colors"
-              placeholder="you@example.com"
-            />
-          </div>
+        <Link
+          href="/login"
+          className="w-full inline-flex items-center justify-center gap-2 bg-white text-black py-3.5 rounded-full text-xs font-bold tracking-widest uppercase hover:bg-white/90 transition-all shadow-lg"
+        >
+          Sign In with Google
+        </Link>
 
-          {error && (
-            <p className="text-red-400 text-xs text-center py-2 px-3 bg-red-400/10 rounded-lg">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-white text-black font-medium text-sm uppercase tracking-widest py-3.5 rounded-full hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        <div className="mt-8 pt-6 border-t border-white/10">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors"
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>Send Reset Link <ArrowRight className="h-4 w-4" /></>
-            )}
-          </button>
-        </form>
+            <ArrowLeft className="h-3 w-3" /> Back to Store
+          </Link>
+        </div>
       </div>
     </main>
   );
