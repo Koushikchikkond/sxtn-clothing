@@ -16,8 +16,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fulfillOrder, buildShiprocketPayload } from "@/lib/shiprocket";
-import { sendOrderStatusEmail } from "@/lib/email/resend";
+import { pushOrderToShiprocket, buildShiprocketPayload } from "@/lib/shiprocket";
 import { requireAdmin } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
@@ -67,7 +66,7 @@ export async function POST(
       );
     }
 
-    // ── 2. Build Shiprocket payload & fulfill ──────────────────────────────
+    // ── 2. Build Shiprocket payload & push (without auto-assigning courier) ─
     const payload = buildShiprocketPayload({
       id: order.id,
       created_at: order.created_at,
@@ -79,19 +78,15 @@ export async function POST(
       order_items: order.order_items || [],
     });
 
-    const { shiprocketOrderId, shipmentId, awbCode, courierName, trackingUrl } =
-      await fulfillOrder(payload);
+    const { shiprocketOrderId, shipmentId } = await pushOrderToShiprocket(payload);
 
-    // ── 3. Update Supabase with Shiprocket details ─────────────────────────
+    // ── 3. Update Supabase with Shiprocket Order & Shipment IDs ────────────
     const { error: updateErr } = await (supabase.from("orders") as any)
       .update({
         status: "confirmed",
         shiprocket_order_id: String(shiprocketOrderId),
         shiprocket_shipment_id: String(shipmentId),
-        awb_number: awbCode,
-        courier_name: courierName,
-        tracking_url: trackingUrl,
-        notes: `Courier: ${courierName} | AWB: ${awbCode} | Tracking: ${trackingUrl}`,
+        notes: `Pushed to Shiprocket (SR #${shiprocketOrderId}, Shipment #${shipmentId}). Awaiting manual courier selection in Shiprocket Dashboard.${order.notes ? ` [Prev: ${order.notes}]` : ""}`,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -104,40 +99,15 @@ export async function POST(
       );
     }
 
-    // ── 4. Notify customer ─────────────────────────────────────────────────
-    const customerEmail =
-      order.guest_email || (order.shipping_address as any)?.email;
-    const recipientName =
-      (order.shipping_address as any)?.full_name ||
-      (order.shipping_address as any)?.fullName ||
-      "Customer";
-
-    let emailResult = null;
-    if (customerEmail) {
-      emailResult = await sendOrderStatusEmail({
-        to: customerEmail,
-        orderId: order.id,
-        status: "confirmed",
-        recipientName,
-        trackingNumber: awbCode,
-        courierName,
-        trackingUrl,
-        total: order.total,
-      });
-    }
-
     console.log(
-      `[Fulfill] Order ${id} fulfilled — Shiprocket: ${shiprocketOrderId}, AWB: ${awbCode}, Email sent: ${!!emailResult?.success}`
+      `[Fulfill] Order ${id} pushed to Shiprocket — Order ID: ${shiprocketOrderId}, Shipment ID: ${shipmentId}`
     );
 
     return NextResponse.json({
       success: true,
+      message: `Order #${id.slice(0, 8).toUpperCase()} pushed to Shiprocket (SR #${shiprocketOrderId}). Select your preferred courier in Shiprocket dashboard to generate AWB.`,
       shiprocketOrderId,
       shipmentId,
-      awbCode,
-      courierName,
-      trackingUrl,
-      emailSent: !!emailResult?.success,
     });
   } catch (err: unknown) {
     console.error("[Fulfill] Error:", err);

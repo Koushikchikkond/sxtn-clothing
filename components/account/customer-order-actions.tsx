@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -16,6 +16,10 @@ import {
 } from "lucide-react";
 import type { OrderItem, OrderReturn } from "@/types/database.types";
 
+export interface OrderItemWithStock extends OrderItem {
+  availableVariants?: Array<{ size: string; stock: number }>;
+}
+
 interface CustomerOrderActionsProps {
   orderId: string;
   status: string;
@@ -24,7 +28,7 @@ interface CustomerOrderActionsProps {
   awbNumber?: string | null;
   courierName?: string | null;
   trackingUrl?: string | null;
-  items?: OrderItem[];
+  items?: OrderItemWithStock[];
   existingReturns?: OrderReturn[];
 }
 
@@ -80,6 +84,68 @@ export function CustomerOrderActions({
   const [returnLoading, setReturnLoading] = useState(false);
   const [returnError, setReturnError] = useState<string | null>(null);
   const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
+
+  const CANONICAL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
+
+  const selectedItem = useMemo(() => {
+    return items.find((i) => i.id === selectedItemId) || items[0];
+  }, [items, selectedItemId]);
+
+  const itemSizes = useMemo(() => {
+    if (!selectedItem) return [];
+
+    const variants = selectedItem.availableVariants || [];
+    if (variants.length > 0) {
+      return variants
+        .slice()
+        .sort((a, b) => {
+          const idxA = CANONICAL_SIZES.indexOf(a.size.toUpperCase());
+          const idxB = CANONICAL_SIZES.indexOf(b.size.toUpperCase());
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          return a.size.localeCompare(b.size);
+        })
+        .map((v) => {
+          const isCurrent = v.size.toUpperCase() === selectedItem.size?.toUpperCase();
+          const isOutOfStock = v.stock <= 0;
+          return {
+            size: v.size,
+            stock: v.stock,
+            isCurrent,
+            isOutOfStock,
+            isSelectable: !isCurrent && !isOutOfStock,
+          };
+        });
+    }
+
+    // Fallback if variants not found
+    return CANONICAL_SIZES.map((sz) => {
+      const isCurrent = sz.toUpperCase() === selectedItem.size?.toUpperCase();
+      return {
+        size: sz,
+        stock: 10,
+        isCurrent,
+        isOutOfStock: false,
+        isSelectable: !isCurrent,
+      };
+    });
+  }, [selectedItem]);
+
+  const hasAnyInStockForExchange = useMemo(() => {
+    return itemSizes.some((s) => s.isSelectable);
+  }, [itemSizes]);
+
+  // Keep requestedSize pointing to a valid in-stock size
+  useEffect(() => {
+    if (returnType === "exchange" && itemSizes.length > 0) {
+      const currentValid = itemSizes.find((s) => s.size === requestedSize && s.isSelectable);
+      if (!currentValid) {
+        const firstAvailable = itemSizes.find((s) => s.isSelectable);
+        if (firstAvailable) {
+          setRequestedSize(firstAvailable.size);
+        }
+      }
+    }
+  }, [selectedItemId, returnType, itemSizes, requestedSize]);
 
   const isCancellable = status === "pending" || status === "paid";
   const isCancelled = status === "cancelled";
@@ -138,6 +204,27 @@ export function CustomerOrderActions({
     setReturnError(null);
 
     try {
+      if (returnType === "exchange") {
+        if (!hasAnyInStockForExchange) {
+          setReturnError("All other sizes are currently out of stock. Please select Return Item for a full refund.");
+          setReturnLoading(false);
+          return;
+        }
+        const targetVariant = itemSizes.find((s) => s.size === requestedSize);
+        if (targetVariant && !targetVariant.isSelectable) {
+          if (targetVariant.isCurrent) {
+            setReturnError("Please choose a different size from your current size.");
+            setReturnLoading(false);
+            return;
+          }
+          if (targetVariant.isOutOfStock) {
+            setReturnError(`Size ${requestedSize} is currently out of stock. Please select another size or request a return.`);
+            setReturnLoading(false);
+            return;
+          }
+        }
+      }
+
       const selectedItem = items.find((i) => i.id === selectedItemId) || items[0];
 
       const res = await fetch(`/api/orders/${orderId}/returns`, {
@@ -571,28 +658,50 @@ export function CustomerOrderActions({
               </div>
             )}
 
-            {/* If Exchange: Requested Replacement Size */}
+            {/* If Exchange: Requested Replacement Size with Real-Time Stock Validation */}
             {returnType === "exchange" && (
               <div>
-                <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1.5 font-bold">
-                  Desired Replacement Size *
-                </label>
-                <div className="grid grid-cols-6 gap-2">
-                  {AVAILABLE_SIZES.map((sz) => (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => setRequestedSize(sz)}
-                      className={`py-2 text-xs font-bold font-mono border transition-colors ${
-                        requestedSize === sz
-                          ? "bg-white text-black border-white"
-                          : "bg-black text-white border-white/20 hover:border-white/50"
-                      }`}
-                    >
-                      {sz}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                  <label className="text-[10px] uppercase tracking-widest text-white/50 font-bold">
+                    Desired Replacement Size *
+                  </label>
+                  {selectedItem?.size && (
+                    <span className="text-[10px] text-white/40">
+                      Your current size: <strong className="text-white font-mono">{selectedItem.size}</strong>
+                    </span>
+                  )}
                 </div>
+
+                {!hasAnyInStockForExchange ? (
+                  <div className="p-3 bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs rounded-none">
+                    ⚠️ All other sizes for this item are currently out of stock. Please select <strong>Return Item</strong> above to receive a full refund.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {itemSizes.map(({ size, stock, isCurrent, isOutOfStock, isSelectable }) => (
+                      <button
+                        key={size}
+                        type="button"
+                        disabled={!isSelectable}
+                        onClick={() => isSelectable && setRequestedSize(size)}
+                        className={`py-2 px-1 text-xs font-mono border transition-all flex flex-col items-center justify-center ${
+                          !isSelectable
+                            ? "opacity-30 cursor-not-allowed bg-white/5 border-white/10 text-white/40"
+                            : requestedSize === size
+                            ? "bg-white text-black font-bold border-white shadow-md scale-[1.02]"
+                            : "bg-black text-white border-white/20 hover:border-white/50"
+                        }`}
+                      >
+                        <span className={`text-xs font-bold ${isOutOfStock ? "line-through text-white/30" : ""}`}>
+                          {size}
+                        </span>
+                        <span className="text-[9px] mt-0.5 tracking-tight font-sans whitespace-nowrap">
+                          {isCurrent ? "Current" : isOutOfStock ? "Out of stock" : stock <= 3 ? `${stock} left` : "In stock"}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -649,9 +758,9 @@ export function CustomerOrderActions({
               </button>
               <button
                 type="button"
-                disabled={returnLoading}
+                disabled={returnLoading || (returnType === "exchange" && !hasAnyInStockForExchange)}
                 onClick={handleConfirmReturn}
-                className="px-5 py-2 text-xs uppercase tracking-widest font-bold bg-white text-black hover:bg-white/90 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                className="px-5 py-2 text-xs uppercase tracking-widest font-bold bg-white text-black hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
               >
                 {returnLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Submit {returnType === "exchange" ? "Exchange" : "Return"}

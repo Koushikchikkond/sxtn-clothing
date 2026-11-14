@@ -324,6 +324,18 @@ export async function generatePickup(shipmentIds: number[]): Promise<boolean> {
 }
 
 /**
+ * Push order to Shiprocket for manual courier selection in Shiprocket Dashboard.
+ * Creates the order & shipment in Shiprocket in New/Processing status without auto-assigning courier or generating AWB.
+ */
+export async function pushOrderToShiprocket(payload: ShiprocketOrderPayload): Promise<{
+  shiprocketOrderId: number;
+  shipmentId: number;
+  status: string;
+}> {
+  return await createShiprocketOrder(payload);
+}
+
+/**
  * Full fulfillment flow: create order → assign AWB → schedule pickup.
  * Returns all IDs needed to store in the database.
  */

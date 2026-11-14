@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-14-exchange-stock-size-validation-and-shiprocket-manual-courier|2026-11-14 Exchange In-Stock Size Filtering & Shiprocket Manual Courier Selection]]
 - [[2026-11-14-google-only-authentication|2026-11-14 Google-Only One-Click Authentication (Remove Email & Password)]]
 - [[2026-11-14-admin-returns-exchanges-sidebar-page|2026-11-14 Admin Sidebar Returns & Exchanges Navigation and Dedicated Management Page]]
 - [[2026-11-13-return-exchange-customer-and-menu-tees|2026-11-13 Customer Return & Exchange Flow and Navigation Menu Tees Update]]

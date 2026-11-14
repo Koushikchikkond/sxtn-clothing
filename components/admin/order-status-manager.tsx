@@ -148,14 +148,16 @@ export function OrderStatusManager({
 
       setShiprocket({
         orderId: String(data.shiprocketOrderId),
-        awb: data.awbCode,
-        courier: data.courierName,
-        trackingUrl: data.trackingUrl,
+        awb: data.awbCode || null,
+        courier: data.courierName || null,
+        trackingUrl: data.trackingUrl || null,
       });
       setStatus("confirmed");
 
       setMessage({
-        text: `Shiprocket Order Created! Courier: ${data.courierName} | AWB: ${data.awbCode}. Notification email sent to ${customerEmail || "customer"}.`,
+        text:
+          data.message ||
+          `Shiprocket Order Created (ID: ${data.shiprocketOrderId}). Please select courier in Shiprocket dashboard.`,
         type: "success",
       });
       router.refresh();
@@ -192,8 +194,8 @@ export function OrderStatusManager({
 
       {/* Action Buttons */}
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-        {/* 1-Click Ship with Shiprocket button */}
-        {!shiprocket.awb && status !== "cancelled" && status !== "delivered" && (
+        {/* Push to Shiprocket button (creates order in Shiprocket for manual courier selection) */}
+        {!shiprocket.orderId && !shiprocket.awb && status !== "cancelled" && status !== "delivered" && (
           <button
             type="button"
             disabled={loading || fulfilling}
@@ -220,7 +222,7 @@ export function OrderStatusManager({
             ) : (
               <Rocket className="w-3.5 h-3.5" />
             )}
-            {fulfilling ? "Pushing to Shiprocket…" : "Ship with Shiprocket"}
+            {fulfilling ? "Pushing to Shiprocket…" : "Push to Shiprocket"}
           </button>
         )}
 
@@ -272,6 +274,73 @@ export function OrderStatusManager({
           </button>
         )}
       </div>
+
+      {/* Shiprocket Pushed Details Card (Awaiting Manual Courier Selection) */}
+      {shiprocket.orderId && !shiprocket.awb && (
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "10px 14px",
+            background: "#faf5ff",
+            border: "1px solid #e9d5ff",
+            borderRadius: "4px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "8px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                background: "#9333ea",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+              }}
+            >
+              <Rocket className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <div style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", color: "#7e22ce", letterSpacing: "0.06em" }}>
+                Pushed to Shiprocket (SR #{shiprocket.orderId})
+              </div>
+              <div style={{ fontSize: "0.76rem", color: "#374151", marginTop: "2px" }}>
+                Order created in Shiprocket. Log into Shiprocket to pick the cheapest courier and assign AWB.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <a
+              href="https://app.shiprocket.in/orders/processing"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                padding: "6px 12px",
+                background: "#7c3aed",
+                color: "#fff",
+                borderRadius: "3px",
+                textDecoration: "none",
+              }}
+            >
+              Open Shiprocket Orders <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Shiprocket Fulfilled Details Card */}
       {shiprocket.awb && (

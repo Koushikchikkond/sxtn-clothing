@@ -43,6 +43,47 @@ export default async function OrderDetailPage({
 
   const items = (itemsRaw as unknown as OrderItem[]) ?? [];
 
+  // Fetch available sizes & stock for exchange validation
+  const variantIds = items.map((i) => i.variant_id).filter(Boolean) as string[];
+  const productNames = items.map((i) => i.product_name).filter(Boolean);
+
+  let productIds: string[] = [];
+  if (variantIds.length > 0) {
+    const { data: currentVariants } = await (supabase.from("product_variants") as any)
+      .select("id, product_id")
+      .in("id", variantIds);
+
+    productIds = (currentVariants || []).map((v: any) => v.product_id).filter(Boolean);
+  }
+
+  // Fetch all variants for matching products
+  const { data: matchedProducts } = await (supabase.from("products") as any)
+    .select("id, name, product_variants(id, size, stock)")
+    .or(
+      productIds.length > 0
+        ? `id.in.(${productIds.join(",")}),name.in.(${productNames.map((n) => `"${n.replace(/"/g, "")}"`).join(",")})`
+        : `name.in.(${productNames.map((n) => `"${n.replace(/"/g, "")}"`).join(",")})`
+    );
+
+  const itemsWithVariants = items.map((item) => {
+    let variants: Array<{ size: string; stock: number }> = [];
+    const foundProduct = (matchedProducts || []).find(
+      (p: any) => p.name?.toLowerCase() === item.product_name?.toLowerCase()
+    );
+
+    if (foundProduct && foundProduct.product_variants) {
+      variants = (foundProduct.product_variants as any[]).map((v) => ({
+        size: String(v.size),
+        stock: Number(v.stock) || 0,
+      }));
+    }
+
+    return {
+      ...item,
+      availableVariants: variants,
+    };
+  });
+
   const { data: returnsRaw } = await (supabase.from("order_returns") as any)
     .select("*")
     .eq("order_id", id)
@@ -96,7 +137,7 @@ export default async function OrderDetailPage({
         awbNumber={(order as any).awb_number}
         courierName={(order as any).courier_name}
         trackingUrl={(order as any).tracking_url}
-        items={items}
+        items={itemsWithVariants}
         existingReturns={existingReturns}
       />
 

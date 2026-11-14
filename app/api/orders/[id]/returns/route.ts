@@ -94,11 +94,71 @@ export async function POST(
       return NextResponse.json({ error: "A valid reason is required." }, { status: 400 });
     }
 
-    if (type === "exchange" && (!requestedSize || !requestedSize.trim())) {
-      return NextResponse.json({ error: "Please select your replacement size for exchange." }, { status: 400 });
+    if (type === "exchange") {
+      if (!requestedSize || !requestedSize.trim()) {
+        return NextResponse.json({ error: "Please select your replacement size for exchange." }, { status: 400 });
+      }
+
+      if (originalSize && originalSize.trim().toLowerCase() === requestedSize.trim().toLowerCase()) {
+        return NextResponse.json(
+          { error: "Replacement size must be different from your current size." },
+          { status: 400 }
+        );
+      }
     }
 
     const adminDb = createAdminClient();
+
+    // 0. If exchange, verify live stock for the requested replacement size
+    if (type === "exchange") {
+      let productId: string | null = null;
+
+      if (orderItemId) {
+        const { data: item } = await (adminDb.from("order_items") as any)
+          .select("id, variant_id, product_name")
+          .eq("id", orderItemId)
+          .single();
+
+        if (item?.variant_id) {
+          const { data: v } = await (adminDb.from("product_variants") as any)
+            .select("product_id")
+            .eq("id", item.variant_id)
+            .single();
+          productId = v?.product_id || null;
+        }
+
+        if (!productId && item?.product_name) {
+          const { data: p } = await (adminDb.from("products") as any)
+            .select("id")
+            .ilike("name", item.product_name)
+            .single();
+          productId = p?.id || null;
+        }
+      } else if (productName) {
+        const { data: p } = await (adminDb.from("products") as any)
+          .select("id")
+          .ilike("name", productName)
+          .single();
+        productId = p?.id || null;
+      }
+
+      if (productId) {
+        const { data: targetVariant } = await (adminDb.from("product_variants") as any)
+          .select("id, size, stock")
+          .eq("product_id", productId)
+          .ilike("size", requestedSize.trim())
+          .single();
+
+        if (targetVariant && targetVariant.stock <= 0) {
+          return NextResponse.json(
+            {
+              error: `Size ${requestedSize.trim().toUpperCase()} is currently out of stock. Please choose another size or request a return.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     // 1. Fetch order and verify ownership & status
     const { data: order, error: orderErr } = await (adminDb.from("orders") as any)
