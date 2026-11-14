@@ -13,7 +13,9 @@ import {
   ArrowLeftRight,
   Clock,
   XCircle,
+  Info,
 } from "lucide-react";
+import { FitGuideModal } from "@/components/storefront/fit-guide-modal";
 import type { OrderItem, OrderReturn } from "@/types/database.types";
 
 export interface OrderItemWithStock extends OrderItem {
@@ -84,6 +86,7 @@ export function CustomerOrderActions({
   const [returnLoading, setReturnLoading] = useState(false);
   const [returnError, setReturnError] = useState<string | null>(null);
   const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
+  const [showFitGuide, setShowFitGuide] = useState(false);
 
   const CANONICAL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
 
@@ -665,11 +668,21 @@ export function CustomerOrderActions({
                   <label className="text-[10px] uppercase tracking-widest text-white/50 font-bold">
                     Desired Replacement Size *
                   </label>
-                  {selectedItem?.size && (
-                    <span className="text-[10px] text-white/40">
-                      Your current size: <strong className="text-white font-mono">{selectedItem.size}</strong>
-                    </span>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {selectedItem?.size && (
+                      <span className="text-[10px] text-white/40">
+                        Current: <strong className="text-white font-mono">{selectedItem.size}</strong>
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowFitGuide(true)}
+                      className="inline-flex items-center gap-1 text-[10px] text-white/80 hover:text-white underline uppercase tracking-wider"
+                    >
+                      <Info className="w-3 h-3" />
+                      Fit Guide
+                    </button>
+                  </div>
                 </div>
 
                 {!hasAnyInStockForExchange ? (
@@ -769,6 +782,14 @@ export function CustomerOrderActions({
           </div>
         </div>
       )}
+
+      {/* Fit Guide Reference Modal */}
+      <FitGuideModal
+        isOpen={showFitGuide}
+        onClose={() => setShowFitGuide(false)}
+        mode="view"
+        selectedSize={requestedSize}
+      />
     </div>
   );
 }

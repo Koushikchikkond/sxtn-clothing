@@ -6,6 +6,8 @@ import { Product, ProductImage, ProductVariant, SizeGuideEntry } from "@/types/d
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
+import { FitGuideModal } from "@/components/storefront/fit-guide-modal";
+import { Info } from "lucide-react";
 
 interface ProductDetailsProps {
   product: Product;
@@ -20,6 +22,11 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   const [sizeError, setSizeError] = useState(false);
   const [added, setAdded] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Fit Guide Modal state
+  const [showFitGuide, setShowFitGuide] = useState(false);
+  const [fitGuideMode, setFitGuideMode] = useState<"confirm" | "view">("confirm");
+  const [hasAcknowledgedFit, setHasAcknowledgedFit] = useState(false);
 
   // Touch swipe state
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -65,7 +72,16 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   };
 
   // Only access Zustand store after client hydration to prevent mismatch
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    try {
+      if (sessionStorage.getItem("sxtn_fit_guide_acknowledged") === "true") {
+        setHasAcknowledgedFit(true);
+      }
+    } catch {
+      // ignore in incognito or SSR
+    }
+  }, []);
 
   // Extract unique sizes from variants
   const sizes = Array.from(new Set(variants.map((v) => v.size)));
@@ -78,6 +94,11 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   // Determine current price (variant might have price override)
   const currentPrice = selectedVariant?.price_override ?? product.price;
   const isOutOfStock = !!(selectedSize && (!selectedVariant || selectedVariant.stock <= 0));
+
+  // Determine if product is a T-Shirt or Boxy Fit apparel
+  const isTee =
+    product.product_type !== "hoodie" ||
+    /tee|t-?shirt|boxy/i.test(product.name);
 
   // Dynamic Size Chart resolution (custom product size chart or sensible default)
   const isHoodie =
@@ -108,7 +129,18 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
       ? defaultHoodieChart
       : defaultTeeChart;
 
-  async function handleAddToCart() {
+  function handleFitGuideConfirm() {
+    setHasAcknowledgedFit(true);
+    try {
+      sessionStorage.setItem("sxtn_fit_guide_acknowledged", "true");
+    } catch {
+      // ignore
+    }
+    handleAddToCart(true);
+  }
+
+  async function handleAddToCart(skipFitNotice?: boolean | React.MouseEvent) {
+    const shouldSkip = typeof skipFitNotice === "boolean" ? skipFitNotice : false;
     if (!selectedSize || !selectedVariant) {
       setSizeError(true);
       setTimeout(() => setSizeError(false), 2000);
@@ -116,6 +148,13 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
     }
 
     if (!mounted) return;
+
+    // For T-shirts, display fit notice if not yet acknowledged in this session
+    if (isTee && !shouldSkip && !hasAcknowledgedFit) {
+      setFitGuideMode("confirm");
+      setShowFitGuide(true);
+      return;
+    }
 
     // Client-side stock guard
     const availableStock = selectedVariant.stock ?? 0;
@@ -241,10 +280,23 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
 
         {/* Size Selector */}
         <div className="mb-10">
-          <div className="mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-white/60">
               Select Size
             </span>
+            {isTee && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFitGuideMode("view");
+                  setShowFitGuide(true);
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/80 hover:text-white uppercase tracking-wider underline underline-offset-4 decoration-white/40 hover:decoration-white transition-colors touch-manipulation"
+              >
+                <Info className="w-3.5 h-3.5" />
+                Fit Guide (Boxy vs Regular)
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-4 gap-3">
@@ -275,6 +327,25 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
               );
             })}
           </div>
+
+          {isTee && (
+            <div className="mt-3 flex items-center justify-between text-xs text-white/70 bg-white/[0.03] border border-white/10 px-3 py-2 rounded-sm">
+              <div className="flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-white/70 shrink-0" />
+                <span>Cut: Signature Boxy Fit (Relaxed &amp; Dropped Shoulders)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setFitGuideMode("view");
+                  setShowFitGuide(true);
+                }}
+                className="text-white underline underline-offset-2 hover:text-white/80 uppercase font-mono text-[11px] tracking-wider shrink-0 ml-2 touch-manipulation"
+              >
+                View Fit
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Size / stock error */}
@@ -478,6 +549,14 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
           </div>
         </div>
       </div>
+      {/* Fit Guide Reference Modal */}
+      <FitGuideModal
+        isOpen={showFitGuide}
+        onClose={() => setShowFitGuide(false)}
+        onConfirm={handleFitGuideConfirm}
+        mode={fitGuideMode}
+        selectedSize={selectedSize}
+      />
     </div>
   );
 }
