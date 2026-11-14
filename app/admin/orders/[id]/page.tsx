@@ -96,9 +96,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               <span>₹{(order as any).subtotal?.toLocaleString("en-IN")}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-              <span style={{ color: "#666" }}>Shipping</span>
+              <span style={{ color: "#666" }}>Delivery</span>
               <span>{(order as any).shipping_fee === 0 ? "Free" : `₹${(order as any).shipping_fee}`}</span>
             </div>
+            {((order as any).total || 0) - ((order as any).subtotal || 0) - ((order as any).shipping_fee || 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                <span style={{ color: "#666" }}>Packaging</span>
+                <span>₹{((order as any).total || 0) - ((order as any).subtotal || 0) - ((order as any).shipping_fee || 0)}</span>
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, borderTop: "1px solid #eee", paddingTop: "8px" }}>
               <span>Total</span>
               <span>₹{(order as any).total?.toLocaleString("en-IN")}</span>

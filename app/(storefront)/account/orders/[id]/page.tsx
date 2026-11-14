@@ -204,9 +204,15 @@ export default async function OrderDetailPage({
               <span>INR {order.subtotal.toLocaleString("en-IN")}</span>
             </div>
             <div className="flex justify-between text-white/40">
-              <span>Shipping</span>
-              <span>INR {order.shipping_fee.toLocaleString("en-IN")}</span>
+              <span>Delivery</span>
+              <span>{order.shipping_fee === 0 ? "FREE" : `INR ${order.shipping_fee.toLocaleString("en-IN")}`}</span>
             </div>
+            {order.total - order.subtotal - order.shipping_fee > 0 && (
+              <div className="flex justify-between text-white/40">
+                <span>Packaging</span>
+                <span>INR {(order.total - order.subtotal - order.shipping_fee).toLocaleString("en-IN")}</span>
+              </div>
+            )}
             <div className="flex justify-between text-white font-bold pt-2 border-t border-white/10">
               <span>Total</span>
               <span>INR {order.total.toLocaleString("en-IN")}</span>

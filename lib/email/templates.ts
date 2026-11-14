@@ -199,11 +199,13 @@ export function getOrderConfirmationHtml(params: {
   total: number;
   subtotal: number;
   shippingFee: number;
+  packagingFee?: number;
   items: EmailOrderItem[];
   address: EmailAddress;
   paymentId?: string;
 }): string {
-  const { orderId, total, subtotal, shippingFee, items, address, paymentId } = params;
+  const { orderId, total, subtotal, shippingFee, packagingFee, items, address, paymentId } = params;
+  const effectivePackaging = packagingFee ?? Math.max(0, total - subtotal - shippingFee);
   const shortId = orderId.slice(0, 8).toUpperCase();
   const recipient = address.fullName || address.full_name || "Customer";
 
@@ -280,6 +282,12 @@ export function getOrderConfirmationHtml(params: {
             ${shippingFee === 0 ? "FREE" : `₹${shippingFee.toLocaleString("en-IN")}`}
           </td>
         </tr>
+        ${effectivePackaging > 0 ? `
+        <tr>
+          <td style="font-size: 13px; color: #777; padding: 3px 0;">Packaging</td>
+          <td style="font-size: 13px; color: #ccc; text-align: right;">₹${effectivePackaging.toLocaleString("en-IN")}</td>
+        </tr>
+        ` : ""}
         <tr>
           <td style="font-size: 16px; font-weight: 800; color: #fff; padding-top: 8px;">Total Paid</td>
           <td style="font-size: 16px; font-weight: 800; color: #fff; text-align: right; padding-top: 8px;">

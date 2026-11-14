@@ -17,6 +17,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { INDIAN_STATES, getCitiesForState } from "@/lib/data/india-locations";
+import { calculateOrderPricing } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 
 interface AddressForm {
   fullName: string;
@@ -31,8 +33,6 @@ interface AddressForm {
   saveAddress?: boolean;
 }
 
-const SHIPPING_FEE = 99;
-
 export default function CheckoutPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -40,8 +40,14 @@ export default function CheckoutPage() {
   const subtotal = useCartStore((s) => s.subtotal());
   const clearCart = useCartStore((s) => s.clearCart);
 
-  const shippingFee = SHIPPING_FEE;
-  const total = subtotal + shippingFee;
+  // Authoritative dynamic pricing: ₹9 packaging charge & free delivery above ₹2,000
+  const {
+    shippingFee,
+    packagingFee,
+    total,
+    isFreeShipping,
+    amountNeededForFreeShipping,
+  } = calculateOrderPricing(subtotal);
 
   // Authentication & saved addresses state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -296,6 +302,7 @@ export default function CheckoutPage() {
           })),
           subtotal,
           shippingFee,
+          packagingFee,
           total,
           address: orderAddressPayload,
         }),
@@ -755,14 +762,35 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
+                {/* Free Delivery incentive banner */}
+                {isFreeShipping ? (
+                  <div className="mb-4 p-2.5 bg-green-950/40 border border-green-500/30 text-green-400 text-xs flex items-center justify-between">
+                    <span>✓ FREE Delivery Unlocked!</span>
+                    <span className="font-mono font-bold">SAVE ₹99</span>
+                  </div>
+                ) : (
+                  <div className="mb-4 p-2.5 bg-white/5 border border-white/10 text-white/70 text-xs flex items-center justify-between">
+                    <span>
+                      Add <strong className="text-white">INR {amountNeededForFreeShipping.toLocaleString("en-IN")}</strong> more for <strong className="text-white">FREE Delivery</strong>
+                    </span>
+                    <span className="text-[10px] text-white/40 uppercase tracking-widest">(Above ₹2,000)</span>
+                  </div>
+                )}
+
                 <div className="space-y-2 text-sm border-t border-white/10 pt-4 mb-6">
                   <div className="flex justify-between text-white/60">
                     <span>Subtotal</span>
                     <span>INR {subtotal.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between text-white/60">
-                    <span>Shipping</span>
-                    <span className="font-display font-medium text-white">INR {shippingFee}</span>
+                    <span>Delivery</span>
+                    <span className={cn("font-display font-medium", isFreeShipping ? "text-green-400 font-bold" : "text-white")}>
+                      {isFreeShipping ? "FREE" : `INR ${shippingFee}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-white/60">
+                    <span>Packaging Charge</span>
+                    <span className="font-display font-medium text-white">INR {packagingFee}</span>
                   </div>
                   <div className="flex justify-between font-bold text-base pt-3 border-t border-white/10 text-white">
                     <span>Total Due</span>

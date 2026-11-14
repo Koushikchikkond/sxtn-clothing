@@ -90,6 +90,7 @@ export async function sendOrderConfirmationEmail(params: {
   total: number;
   subtotal: number;
   shippingFee: number;
+  packagingFee?: number;
   items: EmailOrderItem[];
   address: EmailAddress;
   paymentId?: string;

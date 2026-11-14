@@ -110,7 +110,9 @@ export async function POST(req: NextRequest) {
           total: verified.total,
           razorpay_order_id,
           razorpay_payment_id,
-          shipping_address: address || null,
+          shipping_address: address
+            ? { ...address, packaging_fee: verified.packagingFee }
+            : null,
         };
 
         const { data: order, error: orderError } = await adminDb
@@ -178,6 +180,7 @@ export async function POST(req: NextRequest) {
             total: verified.total,
             subtotal: verified.subtotal,
             shippingFee: verified.shippingFee,
+            packagingFee: verified.packagingFee,
             items: verified.items.map((it) => ({
               name: it.name,
               size: it.size,

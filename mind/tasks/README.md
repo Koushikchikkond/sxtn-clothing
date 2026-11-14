@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-14-checkout-packaging-charge-and-free-delivery|2026-11-14 Checkout Packaging Charge (₹9) & Free Delivery Above ₹2,000]]
 - [[2026-11-14-fit-guide-reference-modal|2026-11-14 Boxy Fit vs Regular Fit Guide Note on Size Selection & Add to Cart]]
 - [[2026-11-14-exchange-stock-size-validation-and-shiprocket-manual-courier|2026-11-14 Exchange In-Stock Size Filtering & Shiprocket Manual Courier Selection]]
 - [[2026-11-14-google-only-authentication|2026-11-14 Google-Only One-Click Authentication (Remove Email & Password)]]

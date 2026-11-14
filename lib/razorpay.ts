@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { calculateOrderPricing } from "@/lib/pricing";
 
 export interface CreateOrderParams {
   amount: number; // in paise (e.g. 50000 = ₹500.00). Minimum 100 paise
@@ -155,6 +156,7 @@ export async function calculateVerifiedCartTotal(
 ): Promise<{
   subtotal: number;
   shippingFee: number;
+  packagingFee: number;
   total: number;
   items: Array<{
     variantId: string;
@@ -270,13 +272,14 @@ export async function calculateVerifiedCartTotal(
     }
   }
 
-  const verifiedShippingFee = 99;
-  const verifiedTotal = verifiedSubtotal + verifiedShippingFee;
+  // Calculate authoritative shipping (free >= ₹2000), packaging (₹9), and total
+  const pricing = calculateOrderPricing(verifiedSubtotal);
 
   return {
-    subtotal: verifiedSubtotal,
-    shippingFee: verifiedShippingFee,
-    total: verifiedTotal,
+    subtotal: pricing.subtotal,
+    shippingFee: pricing.shippingFee,
+    packagingFee: pricing.packagingFee,
+    total: pricing.total,
     items: verifiedItems,
   };
 }

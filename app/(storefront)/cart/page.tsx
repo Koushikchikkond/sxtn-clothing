@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/lib/stores/cart.store";
 import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, AlertTriangle } from "lucide-react";
-
-const SHIPPING_FEE = 99;
+import { calculateOrderPricing } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 
 interface ItemValidation {
   status: "available" | "out_of_stock" | "removed";
@@ -18,6 +18,15 @@ export default function CartPage() {
   const updateQty = useCartStore((s) => s.updateQty);
   const removeItem = useCartStore((s) => s.removeItem);
   const subtotal = useCartStore((s) => s.subtotal());
+
+  // Dynamic pricing: ₹9 packaging charge & free delivery above ₹2,000
+  const {
+    shippingFee,
+    packagingFee,
+    total,
+    isFreeShipping,
+    amountNeededForFreeShipping,
+  } = calculateOrderPricing(subtotal);
 
   const [validationMap, setValidationMap] = useState<Record<string, ItemValidation>>({});
 
@@ -60,9 +69,6 @@ export default function CartPage() {
       }
     });
   };
-
-  const shippingFee = SHIPPING_FEE;
-  const total = subtotal + shippingFee;
 
   if (items.length === 0) {
     return (
@@ -234,14 +240,35 @@ export default function CartPage() {
               </div>
             )}
 
+            {/* Free Delivery incentive banner */}
+            {isFreeShipping ? (
+              <div className="p-3 bg-green-950/40 border border-green-500/30 text-green-400 text-xs flex items-center justify-between">
+                <span>✓ FREE Delivery Unlocked!</span>
+                <span className="font-mono font-bold">SAVE ₹99</span>
+              </div>
+            ) : (
+              <div className="p-3 bg-white/5 border border-white/10 text-white/70 text-xs flex items-center justify-between">
+                <span>
+                  Add <strong className="text-white">INR {amountNeededForFreeShipping.toLocaleString("en-IN")}</strong> more for <strong className="text-white">FREE Delivery</strong>
+                </span>
+                <span className="text-[10px] text-white/40 uppercase tracking-widest">(Above ₹2,000)</span>
+              </div>
+            )}
+
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-white/60">
                 <span>Subtotal</span>
                 <span>INR {subtotal.toLocaleString("en-IN")}</span>
               </div>
               <div className="flex justify-between text-white/60">
-                <span>Shipping</span>
-                <span className="font-display font-medium text-white">INR {shippingFee}</span>
+                <span>Delivery</span>
+                <span className={cn("font-display font-medium", isFreeShipping ? "text-green-400 font-bold" : "text-white")}>
+                  {isFreeShipping ? "FREE" : `INR ${shippingFee}`}
+                </span>
+              </div>
+              <div className="flex justify-between text-white/60">
+                <span>Packaging Charge</span>
+                <span className="font-display font-medium text-white">INR {packagingFee}</span>
               </div>
               <div className="border-t border-white/10 pt-3 flex justify-between font-medium">
                 <span>Total</span>
