@@ -26,7 +26,6 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   // Fit Guide Modal state
   const [showFitGuide, setShowFitGuide] = useState(false);
   const [fitGuideMode, setFitGuideMode] = useState<"confirm" | "view">("confirm");
-  const [hasAcknowledgedFit, setHasAcknowledgedFit] = useState(false);
 
   // Touch swipe state
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -74,13 +73,6 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   // Only access Zustand store after client hydration to prevent mismatch
   useEffect(() => {
     setMounted(true);
-    try {
-      if (sessionStorage.getItem("sxtn_fit_guide_acknowledged") === "true") {
-        setHasAcknowledgedFit(true);
-      }
-    } catch {
-      // ignore in incognito or SSR
-    }
   }, []);
 
   // Extract unique sizes from variants
@@ -130,12 +122,6 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
       : defaultTeeChart;
 
   function handleFitGuideConfirm() {
-    setHasAcknowledgedFit(true);
-    try {
-      sessionStorage.setItem("sxtn_fit_guide_acknowledged", "true");
-    } catch {
-      // ignore
-    }
     handleAddToCart(true);
   }
 
@@ -149,8 +135,8 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
 
     if (!mounted) return;
 
-    // For T-shirts, display fit notice if not yet acknowledged in this session
-    if (isTee && !shouldSkip && !hasAcknowledgedFit) {
+    // For T-shirts, display fit notice each time user adds to bag
+    if (isTee && !shouldSkip) {
       setFitGuideMode("confirm");
       setShowFitGuide(true);
       return;

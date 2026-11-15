@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-15-always-show-tshirt-fit-notification-on-add-to-cart|2026-11-15 Always Show T-Shirt Fit Notification on Every Add to Cart]]
 - [[2026-11-14-checkout-packaging-charge-and-free-delivery|2026-11-14 Checkout Packaging Charge (₹9) & Free Delivery Above ₹2,000]]
 - [[2026-11-14-fit-guide-reference-modal|2026-11-14 Boxy Fit vs Regular Fit Guide Note on Size Selection & Add to Cart]]
 - [[2026-11-14-exchange-stock-size-validation-and-shiprocket-manual-courier|2026-11-14 Exchange In-Stock Size Filtering & Shiprocket Manual Courier Selection]]
