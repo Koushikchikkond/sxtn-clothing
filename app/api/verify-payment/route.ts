@@ -50,18 +50,98 @@ export async function POST(req: NextRequest) {
       try {
         const adminDb = createAdminClient();
 
-        // Idempotency check: prevent replay attacks or network retries creating duplicate orders
-        const { data: existingOrder } = await adminDb
+        // Idempotency check: prevent replay attacks or network retries creating duplicate orders.
+        // Check by payment_id first; if that's missing (webhook beat us), check by order_id.
+        const { data: existingByPayment } = await adminDb
           .from("orders")
-          .select("id")
+          .select("id, status")
           .eq("razorpay_payment_id", razorpay_payment_id)
           .maybeSingle();
 
-        if (existingOrder && (existingOrder as { id?: string }).id) {
+        if (existingByPayment && (existingByPayment as any).id) {
           return NextResponse.json({
             success: true,
             message: "Payment already processed.",
-            orderId: (existingOrder as { id: string }).id,
+            orderId: (existingByPayment as any).id,
+          });
+        }
+
+        // Check if webhook already promoted our pending row to "paid"
+        const { data: existingByOrder } = await adminDb
+          .from("orders")
+          .select("id, status")
+          .eq("razorpay_order_id", razorpay_order_id)
+          .maybeSingle();
+
+        if (existingByOrder && (existingByOrder as any).status === "paid") {
+          // Webhook already did the work — just return success
+          return NextResponse.json({
+            success: true,
+            message: "Payment already processed.",
+            orderId: (existingByOrder as any).id,
+          });
+        }
+
+        // If a pending order already exists (pre-saved in create-order), upgrade it
+        if (existingByOrder && (existingByOrder as any).status === "pending") {
+          const pendingOrderId = (existingByOrder as any).id;
+          const verified = await calculateVerifiedCartTotal(items);
+
+          await adminDb
+            .from("orders")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .update({
+              status: "paid",
+              razorpay_payment_id,
+              shipping_address: address
+                ? { ...address, packaging_fee: verified.packagingFee }
+                : undefined,
+              updated_at: new Date().toISOString(),
+            } as any)
+            .eq("id", pendingOrderId);
+
+          // Decrement stock
+          await Promise.all(verified.items.map(async (item) => {
+            if (!item.variantId) return;
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (adminDb.rpc as any)("decrement_variant_stock", {
+                p_variant_id: item.variantId,
+                p_quantity: item.quantity,
+              });
+            } catch (e) {
+              console.error(`[verify-payment] Stock decrement failed for ${item.variantId}:`, e);
+            }
+          }));
+
+          // Send confirmation email
+          const supabase = await createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          const customerEmail = user?.email || address?.email;
+          if (customerEmail) {
+            await sendOrderConfirmationEmail({
+              to: customerEmail,
+              orderId: pendingOrderId,
+              total: verified.total,
+              subtotal: verified.subtotal,
+              shippingFee: verified.shippingFee,
+              packagingFee: verified.packagingFee,
+              items: verified.items.map((it) => ({
+                name: it.name,
+                size: it.size,
+                color: it.color,
+                quantity: it.quantity,
+                price: it.price,
+              })),
+              address,
+              paymentId: razorpay_payment_id,
+            }).catch((e) => console.warn("[verify-payment] Email error:", e));
+          }
+
+          return NextResponse.json({
+            success: true,
+            message: "Payment verified and order confirmed.",
+            orderId: pendingOrderId,
           });
         }
 

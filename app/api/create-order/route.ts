@@ -4,6 +4,9 @@ import {
   calculateVerifiedCartTotal,
   getRazorpayCredentials,
 } from "@/lib/razorpay";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import type { TablesInsert } from "@/types/database.types";
 
 export const runtime = "nodejs";
 
@@ -22,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { currency = "INR", receipt, notes, items } = body;
+    const { currency = "INR", receipt, notes, items, address } = body;
 
     // Security Anti-Tampering Requirement:
     // Every order must supply cart items so the server recalculates the genuine
@@ -45,18 +48,66 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const order = await createRazorpayOrder({
+    const rzpOrder = await createRazorpayOrder({
       amount: targetAmountInPaise,
       currency,
       receipt: receipt || `rcpt_${Date.now()}`,
       notes,
     });
 
+    // ── Pre-save a pending order row so the webhook can recover if the client drops ──
+    // shortcut: stock is not decremented here — verify-payment / webhook handles it after capture
+    try {
+      const adminDb = createAdminClient();
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const pendingOrderPayload: TablesInsert<"orders"> = {
+        user_id: user?.id ?? null,
+        guest_email: user?.email ?? address?.email ?? null,
+        status: "pending",
+        subtotal: verified.subtotal,
+        shipping_fee: verified.shippingFee,
+        total: verified.total,
+        razorpay_order_id: rzpOrder.orderId,
+        razorpay_payment_id: null,
+        shipping_address: address
+          ? { ...address, packaging_fee: verified.packagingFee }
+          : null,
+      };
+
+      const { data: pendingOrder } = await adminDb
+        .from("orders")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(pendingOrderPayload as any)
+        .select("id")
+        .single();
+
+      if (pendingOrder) {
+        const pendingItems: TablesInsert<"order_items">[] = verified.items.map((item) => ({
+          order_id: (pendingOrder as { id: string }).id,
+          variant_id: item.variantId,
+          product_name: item.name,
+          size: item.size,
+          color: item.color,
+          unit_price: item.price,
+          quantity: item.quantity,
+        }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await adminDb.from("order_items").insert(pendingItems as any);
+        console.log(`[POST /api/create-order] Pending order ${pendingOrder.id} saved for Razorpay order ${rzpOrder.orderId}`);
+      }
+    } catch (dbErr) {
+      // Non-fatal: Razorpay order still created. Log and continue.
+      // The webhook fallback will still work via razorpay_order_id lookup.
+      console.error("[POST /api/create-order] Warning: could not pre-save pending order:", dbErr);
+    }
+
     return NextResponse.json({
-      order_id: order.order_id,
-      orderId: order.orderId,
-      amount: order.amount,
-      currency: order.currency,
+      order_id: rzpOrder.order_id,
+      orderId: rzpOrder.orderId,
+      amount: rzpOrder.amount,
+      currency: rzpOrder.currency,
       key_id: credentials.keyId,
       keyId: credentials.keyId,
     });

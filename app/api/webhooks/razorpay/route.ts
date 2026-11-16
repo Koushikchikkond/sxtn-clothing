@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
 
         if (order) {
           // If not already marked as paid, update it and send confirmation
+          // Also handles orders pre-saved as "pending" when client dropped connection
           if (order.status !== "paid" && order.status !== "confirmed") {
             const { error: updateError } = await (supabase.from("orders") as any)
               .update({

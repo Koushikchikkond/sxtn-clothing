@@ -344,42 +344,58 @@ export default function CheckoutPage() {
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
-          try {
-            // 3. Verify payment signature on server
-            const verifyRes = await fetch("/api/verify-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                items: items.map((i) => ({
-                  variantId: i.variantId,
-                  name: i.name,
-                  size: i.size,
-                  color: i.color,
-                  price: i.price,
-                  quantity: i.quantity,
-                })),
-                address: orderAddressPayload,
-              }),
-            });
+          // Retry verify-payment up to 3 times — mobile Safari drops fetch on UPI app return
+          const verifyPayload = JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            items: items.map((i) => ({
+              variantId: i.variantId,
+              name: i.name,
+              size: i.size,
+              color: i.color,
+              price: i.price,
+              quantity: i.quantity,
+            })),
+            address: orderAddressPayload,
+          });
 
-            const verifyData = await verifyRes.json().catch(() => ({}));
-
-            if (verifyRes.ok && verifyData.success) {
-              clearCart();
-              router.push("/order-success");
-            } else {
-              setError(
-                verifyData.error ||
-                  "Payment signature verification failed. Please contact support."
-              );
-              setLoading(false);
+          let verifyRes: Response | null = null;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              verifyRes = await fetch("/api/verify-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: verifyPayload,
+              });
+              break; // success — stop retrying
+            } catch (fetchErr) {
+              console.warn(`[verify-payment] Attempt ${attempt}/3 failed:`, fetchErr);
+              if (attempt < 3) await new Promise((r) => setTimeout(r, 1200 * attempt));
             }
-          } catch (verifyErr) {
-            console.error("Verification error:", verifyErr);
-            setError("Network error while verifying payment. Please contact support.");
+          }
+
+          if (!verifyRes) {
+            // All 3 attempts failed — payment is captured by Razorpay; webhook will recover the order
+            setError(
+              "Your payment was received but we could not confirm it due to a network issue. " +
+              "Your order will appear in a few minutes. If not, contact support with payment ID: " +
+              response.razorpay_payment_id
+            );
+            setLoading(false);
+            return;
+          }
+
+          const verifyData = await verifyRes.json().catch(() => ({}));
+
+          if (verifyRes.ok && verifyData.success) {
+            clearCart();
+            router.push("/order-success");
+          } else {
+            setError(
+              verifyData.error ||
+                "Payment signature verification failed. Please contact support."
+            );
             setLoading(false);
           }
         },
