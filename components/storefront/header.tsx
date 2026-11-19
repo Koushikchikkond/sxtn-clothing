@@ -316,6 +316,8 @@ export function Header() {
             <div className="flex items-center gap-6 text-white ml-auto">
               <ProfileDropdown />
               <button
+                id="desktop-cart-btn"
+                data-cart-icon="true"
                 onClick={openCart}
                 aria-label={`Bag — ${mounted ? cartCount : 0} items`}
                 className="relative hover:opacity-70 transition-opacity"
@@ -370,6 +372,8 @@ export function Header() {
 
         {/* Right: Bag */}
         <button
+          id="mobile-cart-btn"
+          data-cart-icon="true"
           onClick={openCart}
           style={{ pointerEvents: "auto" }}
           className="relative"
@@ -437,6 +441,8 @@ export function Header() {
 
           {/* Bag */}
           <button
+            id="bottom-cart-btn"
+            data-cart-icon="true"
             onClick={openCart}
             aria-label={`Bag — ${mounted ? cartCount : 0} items`}
             className="p-3 text-white/80 hover:text-white transition-colors relative"

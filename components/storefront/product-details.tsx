@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Product, ProductImage, ProductVariant, SizeGuideEntry } from "@/types/database.types";
 import { cn } from "@/lib/utils";
 import { WishlistButton } from "@/components/storefront/wishlist-button";
 import { NotifyMeModal } from "@/components/storefront/notify-me-modal";
 import { FitGuideModal } from "@/components/storefront/fit-guide-modal";
+import { flyProductToBasket } from "@/lib/cart-flight";
 import { Info } from "lucide-react";
 
 interface ProductDetailsProps {
@@ -22,6 +23,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
   const [sizeError, setSizeError] = useState(false);
   const [added, setAdded] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const addToBagBtnRef = useRef<HTMLButtonElement>(null);
 
   // Fit Guide Modal state
   const [showFitGuide, setShowFitGuide] = useState(false);
@@ -159,24 +161,31 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
       return;
     }
     const effectiveQty = Math.min(qty, canAdd);
-
     const addItem = useCartStore.getState().addItem;
-    for (let i = 0; i < effectiveQty; i++) {
-      addItem({
-        variantId: selectedVariant.id,
-        productId: product.id,
-        productSlug: product.slug,
-        name: product.name,
-        imageUrl: images[0]?.url ?? "",
-        price: currentPrice,
-        size: selectedSize,
-        color: selectedVariant.color,
-        stock: availableStock,
-      });
-    }
+    const itemImage = images[activeImageIndex]?.url || images[0]?.url || "";
 
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    // 21st.dev Parabolic Bezier arc flight animation into the shopping bag
+    flyProductToBasket({
+      startElement: addToBagBtnRef.current,
+      imageUrl: itemImage,
+      onImpact: () => {
+        for (let i = 0; i < effectiveQty; i++) {
+          addItem({
+            variantId: selectedVariant.id,
+            productId: product.id,
+            productSlug: product.slug,
+            name: product.name,
+            imageUrl: itemImage,
+            price: currentPrice,
+            size: selectedSize,
+            color: selectedVariant.color,
+            stock: availableStock,
+          });
+        }
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      },
+    });
   }
 
   return (
@@ -383,6 +392,7 @@ export function ProductDetails({ product, images, variants }: ProductDetailsProp
         {/* Add to Bag and Wishlist Action Group */}
         <div className="flex items-center gap-3 w-full">
           <button
+            ref={addToBagBtnRef}
             type="button"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
