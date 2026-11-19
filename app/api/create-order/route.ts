@@ -62,18 +62,25 @@ export async function POST(req: NextRequest) {
       const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
+      const sanitizedEmail = (user?.email ?? address?.email ?? null)?.trim().toLowerCase() || null;
+      const sanitizedAddress = address
+        ? {
+            ...address,
+            email: address.email ? address.email.trim().toLowerCase() : undefined,
+            packaging_fee: verified.packagingFee,
+          }
+        : null;
+
       const pendingOrderPayload: TablesInsert<"orders"> = {
         user_id: user?.id ?? null,
-        guest_email: user?.email ?? address?.email ?? null,
+        guest_email: sanitizedEmail,
         status: "pending",
         subtotal: verified.subtotal,
         shipping_fee: verified.shippingFee,
         total: verified.total,
         razorpay_order_id: rzpOrder.orderId,
         razorpay_payment_id: null,
-        shipping_address: address
-          ? { ...address, packaging_fee: verified.packagingFee }
-          : null,
+        shipping_address: sanitizedAddress,
       };
 
       const { data: pendingOrder } = await adminDb

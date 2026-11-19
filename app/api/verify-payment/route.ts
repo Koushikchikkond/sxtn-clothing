@@ -87,15 +87,21 @@ export async function POST(req: NextRequest) {
           const pendingOrderId = (existingByOrder as any).id;
           const verified = await calculateVerifiedCartTotal(items);
 
+          const sanitizedAddress = address
+            ? {
+                ...address,
+                email: address.email ? address.email.trim().toLowerCase() : undefined,
+                packaging_fee: verified.packagingFee,
+              }
+            : undefined;
+
           await adminDb
             .from("orders")
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .update({
               status: "paid",
               razorpay_payment_id,
-              shipping_address: address
-                ? { ...address, packaging_fee: verified.packagingFee }
-                : undefined,
+              shipping_address: sanitizedAddress,
               updated_at: new Date().toISOString(),
             } as any)
             .eq("id", pendingOrderId);
@@ -180,9 +186,18 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        const sanitizedEmail = (user?.email ?? address?.email ?? null)?.trim().toLowerCase() || null;
+        const sanitizedAddress = address
+          ? {
+              ...address,
+              email: address.email ? address.email.trim().toLowerCase() : undefined,
+              packaging_fee: verified.packagingFee,
+            }
+          : null;
+
         const orderPayload: TablesInsert<"orders"> = {
           user_id: user?.id ?? null,
-          guest_email: user?.email ?? address?.email ?? null,
+          guest_email: sanitizedEmail,
           address_id: linkedAddressId,
           status: "paid",
           subtotal: verified.subtotal,
@@ -190,9 +205,7 @@ export async function POST(req: NextRequest) {
           total: verified.total,
           razorpay_order_id,
           razorpay_payment_id,
-          shipping_address: address
-            ? { ...address, packaging_fee: verified.packagingFee }
-            : null,
+          shipping_address: sanitizedAddress,
         };
 
         const { data: order, error: orderError } = await adminDb
