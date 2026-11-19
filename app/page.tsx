@@ -2,7 +2,9 @@ import Link from "next/link";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroBanner } from "@/lib/hero-banner";
+import { getCommunityGallery } from "@/lib/community-gallery";
 import { HeroBannerSlider } from "@/components/storefront/hero-banner-slider";
+import { CommunityGallerySection } from "@/components/storefront/community-gallery-section";
 import { ProductCard } from "@/components/storefront/product-card";
 import type { Product, ProductImage } from "@/types/database.types";
 
@@ -14,7 +16,7 @@ type ProductWithCover = Product & {
 export default async function Home() {
   const supabase = await createClient();
 
-  const [productsRes, heroBanner] = await Promise.all([
+  const [productsRes, heroBanner, communityGallery] = await Promise.all([
     supabase
       .from("products")
       .select(`
@@ -25,7 +27,8 @@ export default async function Home() {
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(8),
-    getHeroBanner(),
+    getHeroBanner(supabase),
+    getCommunityGallery(supabase),
   ]);
 
   const products = (productsRes.data as unknown as ProductWithCover[]) ?? [];
@@ -80,6 +83,9 @@ export default async function Home() {
           </Link>
         </div>
       </section>
+
+      {/* ─── Customer Community Photos (3D Circular Animated Showcase) ────────── */}
+      <CommunityGallerySection config={communityGallery} />
 
       {/* Spacer for mobile bottom nav */}
       <div className="h-24 md:hidden" />

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { HeroBannerSlide } from "@/lib/hero-banner";
+import { CommunityGalleryManager } from "@/components/admin/community-gallery-manager";
 
 interface HeroBannerData {
   desktop_url: string;
@@ -14,6 +15,7 @@ interface HeroBannerData {
 }
 
 export default function AdminHeroBannerPage() {
+  const [activeTab, setActiveTab] = useState<"hero" | "community">("hero");
   const [slides, setSlides] = useState<HeroBannerSlide[]>([
     {
       id: "1",
@@ -350,34 +352,38 @@ export default function AdminHeroBannerPage() {
               margin: 0,
             }}
           >
-            Front Page Hero Carousel
+            {activeTab === "community" ? "Customer Photos Showcase" : "Front Page Hero Carousel"}
           </h1>
           <p style={{ color: "#666", marginTop: "6px", fontSize: "0.88rem" }}>
-            Manage multiple hero images that automatically loop and cycle one by one on the homepage for Desktop & Mobile.
+            {activeTab === "community"
+              ? "Manage photos of customers wearing 6XTN t-shirts with 3D circular rotating animation on the homepage."
+              : "Manage multiple hero images that automatically loop and cycle one by one on the homepage for Desktop & Mobile."}
           </p>
         </div>
 
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button
-            type="button"
-            onClick={addSlide}
-            style={{
-              padding: "10px 18px",
-              background: "#000",
-              color: "#fff",
-              border: "none",
-              fontSize: "0.8rem",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            ＋ Add Another Slide
-          </button>
+          {activeTab === "hero" && (
+            <button
+              type="button"
+              onClick={addSlide}
+              style={{
+                padding: "10px 18px",
+                background: "#000",
+                color: "#fff",
+                border: "none",
+                fontSize: "0.8rem",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              ＋ Add Another Slide
+            </button>
+          )}
 
           <Link
             href="/"
@@ -401,6 +407,63 @@ export default function AdminHeroBannerPage() {
           </Link>
         </div>
       </div>
+
+      {/* ── Tabs Navigation ─────────────────────────────────── */}
+      <div
+        style={{
+          display: "flex",
+          borderBottom: "2px solid #e5e5e5",
+          marginBottom: "2rem",
+          gap: "1.5rem",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setActiveTab("hero")}
+          style={{
+            padding: "10px 4px",
+            border: "none",
+            borderBottom: activeTab === "hero" ? "3px solid #000" : "3px solid transparent",
+            background: "none",
+            fontSize: "0.85rem",
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: activeTab === "hero" ? "#000" : "#888",
+            cursor: "pointer",
+            marginBottom: "-2px",
+            transition: "all 0.15s",
+          }}
+        >
+          🖼️ Hero Banner Carousel
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("community")}
+          style={{
+            padding: "10px 4px",
+            border: "none",
+            borderBottom: activeTab === "community" ? "3px solid #000" : "3px solid transparent",
+            background: "none",
+            fontSize: "0.85rem",
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: activeTab === "community" ? "#000" : "#888",
+            cursor: "pointer",
+            marginBottom: "-2px",
+            transition: "all 0.15s",
+          }}
+        >
+          ✨ Customer Photos Gallery (3D Motion)
+        </button>
+      </div>
+
+      {activeTab === "community" ? (
+        <CommunityGalleryManager />
+      ) : (
+        <>
 
       {/* ── Feedback Message ───────────────────────────────────── */}
       {feedback && (
@@ -968,6 +1031,8 @@ export default function AdminHeroBannerPage() {
           </button>
         </div>
       </form>
+      </>
+      )}
     </div>
   );
 }

@@ -68,7 +68,7 @@ const NAV = [
     ),
   },
   {
-    label: "Hero Banner",
+    label: "Banners & Gallery",
     href: "/admin/hero-banner",
     exact: false,
     icon: (
