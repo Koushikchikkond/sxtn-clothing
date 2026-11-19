@@ -16,6 +16,9 @@ import {
   ShieldCheck,
   ChevronRight,
   AlertCircle,
+  X,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { INDIAN_STATES, getCitiesForState } from "@/lib/data/india-locations";
 import { calculateOrderPricing } from "@/lib/pricing";
@@ -76,6 +79,13 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+
+  // Email confirmation popup state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [modalEmail, setModalEmail] = useState("");
+  const [isEditingModalEmail, setIsEditingModalEmail] = useState(false);
+  const [modalEmailError, setModalEmailError] = useState<string | null>(null);
+  const [modalEmailSuggestion, setModalEmailSuggestion] = useState<string | null>(null);
 
   // Available cities for the selected state
   const availableCities = form.state ? getCitiesForState(form.state) : [];
@@ -268,10 +278,9 @@ export default function CheckoutPage() {
     }
   }
 
-  async function handlePayment(e: React.FormEvent) {
+  function handleInitiatePayment(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     try {
       // Basic client-side validation
@@ -315,6 +324,63 @@ export default function CheckoutPage() {
         throw new Error("Please enter a valid 6-digit PIN code.");
       }
 
+      // Open email confirmation popup before payment
+      setModalEmail(emailTrimmed);
+      setIsEditingModalEmail(false);
+      setModalEmailError(null);
+      setModalEmailSuggestion(suggestEmailCorrection(emailTrimmed));
+      setIsEmailModalOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Please complete all required fields.");
+    }
+  }
+
+  function handleModalEmailChange(val: string) {
+    setModalEmail(val);
+    setModalEmailError(null);
+    const suggestion = suggestEmailCorrection(val);
+    setModalEmailSuggestion(suggestion);
+  }
+
+  function applyModalEmailSuggestion(suggestion: string) {
+    setModalEmail(suggestion);
+    setModalEmailSuggestion(null);
+    setModalEmailError(null);
+    setForm((prev) => ({ ...prev, email: suggestion }));
+  }
+
+  function handleSaveModalEmail() {
+    const trimmed = modalEmail.trim();
+    if (!trimmed || !isValidEmailFormat(trimmed)) {
+      setModalEmailError("Please enter a valid email address (e.g. name@gmail.com).");
+      return;
+    }
+    setForm((prev) => ({ ...prev, email: trimmed }));
+    setIsEditingModalEmail(false);
+    setModalEmailError(null);
+  }
+
+  async function handleConfirmAndPay() {
+    const finalEmail = modalEmail.trim();
+    if (!finalEmail || !isValidEmailFormat(finalEmail)) {
+      setModalEmailError("Please enter a valid email address.");
+      return;
+    }
+    if (modalEmailSuggestion) {
+      setModalEmailError(`Did you mean "${modalEmailSuggestion}"? Please tap "Fix" or correct.`);
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, email: finalEmail }));
+    setIsEmailModalOpen(false);
+    await executePayment(finalEmail);
+  }
+
+  async function executePayment(confirmedEmail: string) {
+    setError(null);
+    setLoading(true);
+
+    try {
       // If user is logged in and entered a new address with save option enabled:
       let linkedAddressId = form.addressId;
       if (isLoggedIn && selectedAddressId === "new" && saveAddressToAccount) {
@@ -352,7 +418,7 @@ export default function CheckoutPage() {
       const orderAddressPayload = {
         fullName: form.fullName.trim(),
         full_name: form.fullName.trim(),
-        email: form.email.trim(),
+        email: confirmedEmail.trim(),
         phone: form.phone.trim(),
         line1: form.line1.trim(),
         line2: form.line2.trim() || null,
@@ -412,7 +478,7 @@ export default function CheckoutPage() {
         description: `Order — ${items.length} item${items.length > 1 ? "s" : ""}`,
         prefill: {
           name: form.fullName,
-          email: form.email,
+          email: confirmedEmail,
           contact: form.phone,
         },
         theme: { color: "#000000", backdrop_color: "#000000" },
@@ -549,7 +615,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <form onSubmit={handlePayment}>
+        <form onSubmit={handleInitiatePayment}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* ── Delivery Address Section ─────────────────────────── */}
             <div className="lg:col-span-2 space-y-8">
@@ -993,6 +1059,160 @@ export default function CheckoutPage() {
           </div>
         </form>
       </div>
+
+      {/* ── Pre-Payment Email Confirmation Modal ── */}
+      {isEmailModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !loading) {
+              setIsEmailModalOpen(false);
+            }
+          }}
+        >
+          <div className="relative w-full max-w-md bg-[#0e0e0e] border border-white/20 p-6 sm:p-7 shadow-2xl">
+            {/* Close Button */}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setIsEmailModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 text-white/50 hover:text-white disabled:opacity-30 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                <Mail className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="font-display text-sm uppercase tracking-widest text-white font-bold">
+                  Confirm Your Email
+                </h3>
+                <p className="text-[11px] text-white/40 tracking-wider">
+                  Important for your order & tracking
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-white/70 leading-relaxed mb-4">
+              Your order confirmation receipt, payment receipt, and live tracking updates will be delivered to:
+            </p>
+
+            {/* Email Display / Inline Edit Box */}
+            <div className="mb-5 p-4 bg-white/[0.04] border border-white/15 rounded">
+              {isEditingModalEmail ? (
+                <div className="space-y-2.5">
+                  <label className="text-[10px] uppercase tracking-wider text-white/50 font-bold block">
+                    Correct Your Email Address:
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={modalEmail}
+                      onChange={(e) => handleModalEmailChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSaveModalEmail();
+                        }
+                      }}
+                      autoFocus
+                      className="flex-1 bg-black border border-white/40 text-white text-xs px-3 py-2.5 rounded focus:border-white focus:outline-none"
+                      placeholder="e.g. name@gmail.com"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveModalEmail}
+                      className="px-3.5 py-2.5 bg-white text-black text-xs font-bold uppercase tracking-wider rounded hover:bg-white/90 shrink-0 cursor-pointer"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 block mb-0.5">
+                      Recipient Email
+                    </span>
+                    <span className="font-mono text-sm font-bold text-white break-all">
+                      {modalEmail}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingModalEmail(true)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-white/60 hover:text-white underline underline-offset-2 shrink-0 cursor-pointer py-1 px-2"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Edit
+                  </button>
+                </div>
+              )}
+
+              {/* Typo Suggestion inside modal */}
+              {modalEmailSuggestion && (
+                <div className="mt-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded flex items-center justify-between gap-2 text-xs text-amber-200">
+                  <span className="truncate text-[11px]">
+                    Did you mean <strong className="text-white underline">{modalEmailSuggestion}</strong>?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => applyModalEmailSuggestion(modalEmailSuggestion)}
+                    className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-black font-bold uppercase text-[9px] rounded shrink-0 cursor-pointer"
+                  >
+                    Fix Email
+                  </button>
+                </div>
+              )}
+
+              {/* Modal Email Error */}
+              {modalEmailError && (
+                <p className="mt-2 text-xs text-red-400 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-400" />
+                  <span>{modalEmailError}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={handleConfirmAndPay}
+                disabled={loading}
+                className="w-full bg-white text-black h-12 font-display text-xs uppercase tracking-widest font-bold hover:bg-white/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Opening Payment…</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Confirm & Pay INR {total.toLocaleString("en-IN")}</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setIsEmailModalOpen(false)}
+                className="w-full text-center text-xs uppercase tracking-wider text-white/40 hover:text-white py-2 transition-colors disabled:opacity-30 cursor-pointer"
+              >
+                Back to Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

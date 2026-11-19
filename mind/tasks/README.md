@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-19-checkout-email-confirmation-modal|2026-11-19 Checkout Pre-Payment Email Confirmation Modal]]
 - [[2026-11-19-checkout-email-verification-and-confirmation|2026-11-19 Checkout Email Verification & Smart Pre-Payment Review]]
 - [[2026-11-17-fix-payment-network-drop|2026-11-17 Fix Payment Network Drop — Order Not Created on Mobile UPI]]
 - [[2026-11-15-always-show-tshirt-fit-notification-on-add-to-cart|2026-11-15 Always Show T-Shirt Fit Notification on Every Add to Cart]]
