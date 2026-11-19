@@ -12,13 +12,23 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }
   cancelled: { bg: "#fef2f2", text: "#991b1b", border: "#ef4444" },
 };
 
-export default async function AdminOrdersPage() {
+export default async function AdminOrdersPage(props: {
+  searchParams?: Promise<{ view?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const isLogsView = searchParams?.view === "logs";
   const supabase = await createClient();
 
-  const { data: orders } = await supabase
+  const { data: allOrders } = await supabase
     .from("orders")
     .select("id, status, total, subtotal, shipping_fee, created_at, user_id, guest_email, shipping_address")
     .order("created_at", { ascending: false });
+
+  const orderList = (allOrders as any[]) || [];
+  const paidOrders = orderList.filter((o) => o.status !== "pending");
+  const pendingLogs = orderList.filter((o) => o.status === "pending");
+
+  const orders = isLogsView ? pendingLogs : paidOrders;
 
   const { data: allReturns } = await (supabase.from("order_returns") as any)
     .select("id, order_id, type, status");
@@ -37,30 +47,81 @@ export default async function AdminOrdersPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "12px" }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 900, letterSpacing: "0.04em", textTransform: "uppercase", color: "#000" }}>
-          Orders ({orders?.length ?? 0})
-        </h1>
-        {pendingReturnCount > 0 && (
-          <span
+        <div>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 900, letterSpacing: "0.04em", textTransform: "uppercase", color: "#000", margin: 0 }}>
+            {isLogsView ? `Order Logs (${pendingLogs.length})` : `Orders (${paidOrders.length})`}
+          </h1>
+          <p style={{ fontSize: "0.78rem", color: "#666", marginTop: "4px", marginBottom: 0 }}>
+            {isLogsView
+              ? "Pre-saved checkout sessions awaiting payment or abandoned checkouts."
+              : "Confirmed and paid orders ready for fulfillment and tracking."}
+          </p>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          <Link
+            href="/admin/orders"
             style={{
-              fontSize: "0.72rem",
+              fontSize: "0.74rem",
               fontWeight: 800,
-              letterSpacing: "0.08em",
+              letterSpacing: "0.06em",
               textTransform: "uppercase",
-              padding: "4px 12px",
-              backgroundColor: "#fef3c7",
-              color: "#92400e",
-              border: "1px solid #f59e0b",
+              padding: "7px 14px",
+              textDecoration: "none",
+              backgroundColor: !isLogsView ? "#000" : "#fff",
+              color: !isLogsView ? "#fff" : "#444",
+              border: "1px solid #000",
+              borderRadius: "4px",
+              transition: "all 0.15s",
             }}
           >
-            ⚠️ {pendingReturnCount} Pending Return / Exchange {pendingReturnCount === 1 ? "Request" : "Requests"}
-          </span>
-        )}
+            Paid Orders ({paidOrders.length})
+          </Link>
+
+          <Link
+            href="/admin/orders?view=logs"
+            style={{
+              fontSize: "0.74rem",
+              fontWeight: 800,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              padding: "7px 14px",
+              textDecoration: "none",
+              backgroundColor: isLogsView ? "#000" : "#fff",
+              color: isLogsView ? "#fff" : "#666",
+              border: isLogsView ? "1px solid #000" : "1px solid #ccc",
+              borderRadius: "4px",
+              transition: "all 0.15s",
+            }}
+          >
+            📋 Order Logs ({pendingLogs.length})
+          </Link>
+
+          {pendingReturnCount > 0 && (
+            <span
+              style={{
+                fontSize: "0.72rem",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                padding: "6px 12px",
+                backgroundColor: "#fef3c7",
+                color: "#92400e",
+                border: "1px solid #f59e0b",
+                borderRadius: "4px",
+              }}
+            >
+              ⚠️ {pendingReturnCount} Pending Return{pendingReturnCount === 1 ? "" : "s"}
+            </span>
+          )}
+        </div>
       </div>
 
       {!orders || orders.length === 0 ? (
         <div style={{ textAlign: "center", padding: "4rem 2rem", background: "#fff", border: "1px solid #e5e5e5" }}>
-          <p style={{ color: "#999", fontSize: "0.9rem" }}>No orders yet.</p>
+          <p style={{ color: "#999", fontSize: "0.9rem" }}>
+            {isLogsView ? "No pending order logs." : "No paid orders yet."}
+          </p>
         </div>
       ) : (
         <div style={{ background: "#fff", border: "1px solid #e5e5e5", borderRadius: "4px", overflowX: "auto" }}>

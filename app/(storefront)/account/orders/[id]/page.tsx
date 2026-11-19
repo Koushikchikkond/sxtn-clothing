@@ -33,7 +33,7 @@ export default async function OrderDetailPage({
     .eq("user_id", user.id)
     .single();
 
-  if (!orderRaw) notFound();
+  if (!orderRaw || (orderRaw as any).status === "pending") notFound();
   const order = orderRaw as unknown as Order;
 
   const { data: itemsRaw } = await supabase

@@ -23,6 +23,7 @@ export default async function OrdersPage() {
     .from("orders")
     .select("id, status, total, subtotal, shipping_fee, created_at")
     .eq("user_id", user.id)
+    .neq("status", "pending")
     .order("created_at", { ascending: false });
 
   const orders = (ordersRaw as unknown as OrderRow[]) ?? [];

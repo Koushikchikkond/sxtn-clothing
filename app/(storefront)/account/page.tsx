@@ -18,6 +18,7 @@ export default async function AccountPage() {
     .from("orders")
     .select("id, status, total, created_at")
     .eq("user_id", user.id)
+    .neq("status", "pending")
     .order("created_at", { ascending: false })
     .limit(3);
 
