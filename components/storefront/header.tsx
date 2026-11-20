@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { ShoppingBag, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -126,6 +127,7 @@ function ProfileDropdown() {
 
 // ── Main Header ────────────────────────────────────────────────
 export function Header() {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collections, setCollections] = useState<iCategoryItem[]>([
     { name: "Tees", slug: "tees" },
@@ -200,6 +202,8 @@ export function Header() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => { window.removeEventListener("scroll", handleScroll); clearTimeout(scrollTimeout); };
   }, []);
+
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <>

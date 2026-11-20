@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, Trash2, ArrowRight, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCartStore } from "@/lib/stores/cart.store";
@@ -15,6 +16,7 @@ interface ItemValidation {
 }
 
 export function CartDrawer() {
+  const pathname    = usePathname();
   const items       = useCartStore((s) => s.items);
   const isOpen      = useCartStore((s) => s.isOpen);
   const closeCart   = useCartStore((s) => s.closeCart);
@@ -92,6 +94,8 @@ export function CartDrawer() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [closeCart]);
+
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <AnimatePresence>

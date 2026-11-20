@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, useMotionValue, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Instagram, Twitter, Github, Globe, ChevronDown } from "lucide-react";
+import { Instagram, Globe, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -48,7 +48,7 @@ const MENU_SLIDE_ANIMATION = {
 	},
 };
 
-// ── Black-Themed Animated Menu Trigger Button ───────────────────
+// ── Transparent Animated Menu Trigger Button ─────────────────────
 export function CurvedMenuTrigger({
 	isActive,
 	onClick,
@@ -64,7 +64,7 @@ export function CurvedMenuTrigger({
 			onClick={onClick}
 			aria-label={isActive ? "Close menu" : "Open menu"}
 			className={cn(
-				"h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-none bg-black/80 hover:bg-black border border-white/20 hover:border-white/50 text-white cursor-pointer transition-all duration-200 select-none active:scale-95 pointer-events-auto",
+				"h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-md bg-transparent hover:bg-white/10 text-white cursor-pointer transition-all duration-200 select-none active:scale-95 pointer-events-auto",
 				className
 			)}
 		>
@@ -141,24 +141,6 @@ const CustomFooter: React.FC<{
 						aria-label="Instagram"
 					>
 						<Instagram size={18} />
-					</a>
-					<a
-						href="https://twitter.com"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="hover:text-white transition-colors"
-						aria-label="Twitter / X"
-					>
-						<Twitter size={18} />
-					</a>
-					<a
-						href="https://github.com"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="hover:text-white transition-colors"
-						aria-label="GitHub"
-					>
-						<Github size={18} />
 					</a>
 				</div>
 				<Link
