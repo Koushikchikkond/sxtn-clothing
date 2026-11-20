@@ -11,8 +11,17 @@ interface CustomerReviewsMarqueeProps {
 export function CustomerReviewsMarquee({ reviews }: CustomerReviewsMarqueeProps) {
   if (!reviews || reviews.length === 0) return null;
 
-  // Duplicate reviews to create a seamless infinite loop
-  const displayReviews = [...reviews, ...reviews];
+  // Calculate live average rating from real reviews
+  const avgRating = (
+    reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+  ).toFixed(1);
+
+  // Pad the items list so there are enough cards to span the viewport seamlessly
+  let baseList = [...reviews];
+  while (baseList.length < 6 && baseList.length > 0) {
+    baseList = [...baseList, ...reviews];
+  }
+  const displayReviews = [...baseList, ...baseList];
 
   return (
     <section className="relative w-full bg-black py-20 md:py-28 overflow-hidden border-t border-white/10">
@@ -31,7 +40,7 @@ export function CustomerReviewsMarquee({ reviews }: CustomerReviewsMarqueeProps)
         </h2>
 
         <p className="mt-3 text-sm md:text-base text-white/60 max-w-xl mx-auto font-sans leading-relaxed">
-          Real feedback on fabric weight, boxy cuts, and delivery from streetwear collectors across India.
+          Real feedback on fabric weight, boxy cuts, and delivery from verified customers across India.
         </p>
 
         {/* Global Rating summary badge */}
@@ -41,8 +50,10 @@ export function CustomerReviewsMarquee({ reviews }: CustomerReviewsMarqueeProps)
               <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
             ))}
           </span>
-          <span className="text-white font-bold ml-1">4.9 / 5</span>
-          <span className="text-white/40">· 100% Cotton 280 GSM</span>
+          <span className="text-white font-bold ml-1">{avgRating} / 5</span>
+          <span className="text-white/40">
+            · ({reviews.length} {reviews.length === 1 ? "verified review" : "verified reviews"})
+          </span>
         </div>
       </div>
 
