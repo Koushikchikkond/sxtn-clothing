@@ -644,6 +644,10 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {savedAddresses.map((addr) => {
                       const isSelected = selectedAddressId === addr.id;
+                      const tagMatch = addr.line2?.match(/^\[(.*?)\]\s*(.*)$/);
+                      const addrTag = tagMatch ? tagMatch[1] : null;
+                      const cleanLine2 = tagMatch ? tagMatch[2] : addr.line2;
+
                       return (
                         <div
                           key={addr.id}
@@ -658,15 +662,22 @@ export default function CheckoutPage() {
                             <span className="text-sm font-bold text-white uppercase tracking-wider">
                               {addr.full_name}
                             </span>
-                            {addr.is_default && (
-                              <span className="text-[9px] uppercase tracking-widest font-bold text-black bg-white px-1.5 py-0.5">
-                                Default
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              {addrTag && (
+                                <span className="text-[9px] uppercase tracking-widest font-bold text-white/80 border border-white/20 bg-white/5 px-1.5 py-0.5">
+                                  {addrTag}
+                                </span>
+                              )}
+                              {addr.is_default && (
+                                <span className="text-[9px] uppercase tracking-widest font-bold text-black bg-white px-1.5 py-0.5">
+                                  Default
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <p className="text-white/60 text-xs leading-relaxed">
                             {addr.line1}
-                            {addr.line2 ? `, ${addr.line2}` : ""}
+                            {cleanLine2 ? `, ${cleanLine2}` : ""}
                             <br />
                             {addr.city}, {addr.state} — {addr.pincode}
                           </p>

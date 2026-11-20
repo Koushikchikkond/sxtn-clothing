@@ -3,16 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { ShoppingBag, X, User } from "lucide-react";
+import { ShoppingBag, X, User, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart.store";
 import { createClient } from "@/lib/supabase/client";
 
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/collections/all", label: "Shop All" },
-  { href: "/collections/t-shirts", label: "Tees" },
+const OTHER_NAV_LINKS = [
   { href: "/account", label: "Account" },
   { href: "/account/orders", label: "Orders" },
   { href: "/account/wishlist", label: "Wishlist" },
@@ -27,12 +24,70 @@ function FullScreenMenu({
   onClose: () => void;
 }) {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [collections, setCollections] = useState<Array<{ name: string; slug: string }>>([
+    { name: "Tees", slug: "tees" },
+    { name: "Hoodies", slug: "hoodie" },
+  ]);
+  const [collectionsExpanded, setCollectionsExpanded] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setLoggedIn(!!data.user);
     });
+
+    // Fetch live categories/collections from admin
+    supabase
+      .from("categories")
+      .select("id, name, slug")
+      .order("name")
+      .then(({ data }) => {
+        const catList = (data as any[]) || [];
+        if (catList.length > 0) {
+          const list: Array<{ name: string; slug: string }> = [];
+
+          // 1. Tees first
+          const teesCat = catList.find(
+            (c: any) =>
+              c.slug === "tees" ||
+              c.slug === "t-shirts" ||
+              (c.name && String(c.name).toLowerCase().includes("tee"))
+          );
+          list.push({
+            name: "Tees",
+            slug: (teesCat && teesCat.slug) ? String(teesCat.slug) : "tees",
+          });
+
+          // 2. Hoodies second
+          const hoodieCat = catList.find(
+            (c: any) =>
+              c.slug === "hoodie" ||
+              c.slug === "hoodies" ||
+              (c.name && String(c.name).toLowerCase().includes("hoodie"))
+          );
+          list.push({
+            name: "Hoodies",
+            slug: (hoodieCat && hoodieCat.slug) ? String(hoodieCat.slug) : "hoodie",
+          });
+
+          // 3. Other collections from admin
+          catList.forEach((c: any) => {
+            const isTee =
+              c.slug === "tees" ||
+              c.slug === "t-shirts" ||
+              (c.name && String(c.name).toLowerCase().includes("tee"));
+            const isHoodie =
+              c.slug === "hoodie" ||
+              c.slug === "hoodies" ||
+              (c.name && String(c.name).toLowerCase().includes("hoodie"));
+            if (!isTee && !isHoodie && c.slug) {
+              list.push({ name: String(c.name || c.slug), slug: String(c.slug) });
+            }
+          });
+
+          setCollections(list);
+        }
+      });
   }, []);
 
   const handleSignOut = async () => {
@@ -63,7 +118,7 @@ function FullScreenMenu({
           className="fixed inset-0 z-[80] bg-black text-white flex flex-col"
         >
           {/* Header row */}
-          <div className="flex justify-between items-center px-6 pt-8 pb-6 border-b border-white/10">
+          <div className="flex justify-between items-center px-6 pt-8 pb-6 border-b border-white/10 shrink-0">
             <Link href="/" onClick={onClose}>
               <Image
                 src="/brand-logo.svg"
@@ -84,18 +139,86 @@ function FullScreenMenu({
           </div>
 
           {/* Nav items */}
-          <nav className="flex-1 flex flex-col justify-center px-8 gap-6" aria-label="Full screen navigation">
-            {NAV_LINKS.map((link, i) => (
+          <nav className="flex-1 overflow-y-auto px-8 py-8 flex flex-col justify-center gap-5 sm:gap-6" aria-label="Full screen navigation">
+            {/* Home */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Link
+                href="/"
+                onClick={onClose}
+                className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 block"
+              >
+                Home
+              </Link>
+            </motion.div>
+
+            {/* Collections with Submenu */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCollectionsExpanded((v) => !v)}
+                  className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 flex items-center gap-3 text-left"
+                >
+                  <span>Collections</span>
+                  <ChevronDown
+                    className={`w-5 h-5 sm:w-6 sm:h-6 text-white/50 transition-transform duration-200 ${
+                      collectionsExpanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <Link
+                  href="/collections/all"
+                  onClick={onClose}
+                  className="text-[11px] sm:text-xs uppercase tracking-widest text-white/40 hover:text-white underline underline-offset-4"
+                >
+                  Shop All
+                </Link>
+              </div>
+
+              {collectionsExpanded && (
+                <div className="pl-4 sm:pl-6 border-l border-white/20 space-y-2.5 py-1">
+                  {collections.map((col) => (
+                    <Link
+                      key={col.slug}
+                      href={`/collections/${col.slug}`}
+                      onClick={onClose}
+                      className="block text-sm sm:text-base uppercase tracking-widest text-white/70 hover:text-white hover:translate-x-1 transition-all duration-150"
+                    >
+                      {col.name}
+                    </Link>
+                  ))}
+                  <Link
+                    href="/collections/all"
+                    onClick={onClose}
+                    className="block text-xs uppercase tracking-widest text-white/40 hover:text-white hover:translate-x-1 transition-all duration-150 pt-1"
+                  >
+                    View All Collections →
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Other static links */}
+            {OTHER_NAV_LINKS.map((link, i) => (
               <motion.div
                 key={link.href}
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.05 + i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: 0.18 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
               >
                 <Link
                   href={link.href}
                   onClick={onClose}
-                  className="font-display text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 block"
+                  className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 block"
                 >
                   {link.label}
                 </Link>
@@ -107,8 +230,8 @@ function FullScreenMenu({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="px-8 pb-10 pt-6 border-t border-white/10 flex items-center gap-4"
+            transition={{ delay: 0.4 }}
+            className="px-8 pb-10 pt-6 border-t border-white/10 flex items-center gap-4 shrink-0"
           >
             {loggedIn ? (
               <button

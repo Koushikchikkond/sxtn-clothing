@@ -1,20 +1,41 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Address } from "@/types/database.types";
-import { Plus, Trash2, MapPin, Mail, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, MapPin, Mail, CheckCircle2, Edit2, Tag } from "lucide-react";
 import { INDIAN_STATES, getCitiesForState } from "@/lib/data/india-locations";
+
+function parseAddressTag(line2: string | null): { tag: string; cleanLine2: string } {
+  if (!line2) return { tag: "Home", cleanLine2: "" };
+  const match = line2.match(/^\[(.*?)\]\s*(.*)$/);
+  if (match) {
+    return { tag: match[1].trim() || "Home", cleanLine2: match[2].trim() };
+  }
+  return { tag: "Home", cleanLine2: line2.trim() };
+}
+
+function encodeAddressLine2(tag: string, cleanLine2: string): string | null {
+  const clean = cleanLine2.trim();
+  const normalizedTag = tag.trim() || "Home";
+  if (clean) {
+    return `[${normalizedTag}] ${clean}`;
+  }
+  return `[${normalizedTag}]`;
+}
 
 export default function AddressesPage() {
   const supabase = createClient();
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement | null>(null);
+
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string>("");
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [customCityMode, setCustomCityMode] = useState(false);
 
@@ -23,9 +44,11 @@ export default function AddressesPage() {
     phone: "",
     line1: "",
     line2: "",
+    tag: "Home",
     city: "",
     state: "",
     pincode: "",
+    is_default: false,
   });
 
   const availableCities = form.state ? getCitiesForState(form.state) : [];
@@ -76,6 +99,48 @@ export default function AddressesPage() {
     }
   };
 
+  const resetForm = () => {
+    setForm({
+      full_name: "",
+      phone: "",
+      line1: "",
+      line2: "",
+      tag: "Home",
+      city: "",
+      state: "",
+      pincode: "",
+      is_default: false,
+    });
+    setEditingId(null);
+    setShowForm(false);
+    setCustomCityMode(false);
+  };
+
+  const handleEdit = (addr: Address) => {
+    const { tag, cleanLine2 } = parseAddressTag(addr.line2);
+    const cities = addr.state ? getCitiesForState(addr.state) : [];
+    const isCustomCity = addr.city && !cities.includes(addr.city);
+
+    setEditingId(addr.id);
+    setForm({
+      full_name: addr.full_name || "",
+      phone: addr.phone || "",
+      line1: addr.line1 || "",
+      line2: cleanLine2,
+      tag: tag || "Home",
+      city: addr.city || "",
+      state: addr.state || "",
+      pincode: addr.pincode || "",
+      is_default: addr.is_default || false,
+    });
+    setCustomCityMode(Boolean(isCustomCity));
+    setShowForm(true);
+
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -84,35 +149,43 @@ export default function AddressesPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from("addresses").insert({
-      user_id: user.id,
+    const payload = {
       full_name: form.full_name.trim(),
       phone: form.phone.trim(),
       line1: form.line1.trim(),
-      line2: form.line2.trim() || null,
+      line2: encodeAddressLine2(form.tag, form.line2),
       city: form.city.trim(),
       state: form.state.trim(),
       pincode: form.pincode.trim(),
-      is_default: addresses.length === 0,
-    } as any);
+      is_default: form.is_default || (editingId ? form.is_default : addresses.length === 0),
+    };
+
+    if (payload.is_default) {
+      await (supabase.from("addresses") as any)
+        .update({ is_default: false })
+        .eq("user_id", user.id);
+    }
+
+    if (editingId) {
+      await (supabase.from("addresses") as any)
+        .update(payload)
+        .eq("id", editingId);
+    } else {
+      await (supabase.from("addresses") as any).insert({
+        ...payload,
+        user_id: user.id,
+      });
+    }
 
     await load();
-    setShowForm(false);
-    setForm({
-      full_name: "",
-      phone: "",
-      line1: "",
-      line2: "",
-      city: "",
-      state: "",
-      pincode: "",
-    });
-    setCustomCityMode(false);
+    resetForm();
     setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this address?")) return;
     await supabase.from("addresses").delete().eq("id", id);
+    if (editingId === id) resetForm();
     setAddresses((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -154,9 +227,11 @@ export default function AddressesPage() {
         </div>
         <button
           onClick={() => {
-            setShowForm((v) => !v);
-            if (!showForm) {
-              setCustomCityMode(false);
+            if (showForm) {
+              resetForm();
+            } else {
+              resetForm();
+              setShowForm(true);
             }
           }}
           className="flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all"
@@ -166,16 +241,42 @@ export default function AddressesPage() {
         </button>
       </div>
 
-      {/* Add Address Form */}
+      {/* Add / Edit Address Form */}
       {showForm && (
-        <form onSubmit={handleSave} className="mb-8 border border-white/20 p-6 space-y-4 bg-white/[0.02]">
+        <form
+          ref={formRef}
+          onSubmit={handleSave}
+          className="mb-8 border border-white/20 p-6 space-y-5 bg-white/[0.02]"
+        >
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
-            <h2 className="font-display text-xl uppercase tracking-tight text-white">
-              Add New Delivery Address
+            <h2 className="font-display text-xl uppercase tracking-tight text-white flex items-center gap-2">
+              {editingId ? <Edit2 className="w-4 h-4 text-white/70" /> : <Plus className="w-4 h-4 text-white/70" />}
+              <span>{editingId ? "Update Delivery Address" : "Add New Delivery Address"}</span>
             </h2>
-            <span className="text-[11px] uppercase tracking-widest text-white/30">
-              Saved to your profile
+            <span className="text-[11px] uppercase tracking-widest text-white/40">
+              {editingId ? "Editing saved address" : "Saved to your profile"}
             </span>
+          </div>
+
+          {/* Address Tag Selector */}
+          <div>
+            <label className={labelClass}>Address Tag / Type *</label>
+            <div className="flex flex-wrap items-center gap-2">
+              {["Home", "Office", "Other"].map((tagOption) => (
+                <button
+                  key={tagOption}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, tag: tagOption }))}
+                  className={`px-4 py-2 text-xs uppercase tracking-widest font-bold border transition-colors ${
+                    form.tag === tagOption
+                      ? "bg-white text-black border-white"
+                      : "border-white/20 text-white/70 hover:border-white/50 bg-white/5"
+                  }`}
+                >
+                  {tagOption}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -305,17 +406,30 @@ export default function AddressesPage() {
             </div>
           </div>
 
+          {/* Set as default checkbox */}
+          <div className="pt-1">
+            <label className="inline-flex items-center gap-2.5 cursor-pointer text-xs uppercase tracking-widest text-white/80 hover:text-white select-none">
+              <input
+                type="checkbox"
+                checked={form.is_default}
+                onChange={(e) => setForm((f) => ({ ...f, is_default: e.target.checked }))}
+                className="w-4 h-4 accent-white rounded-none cursor-pointer"
+              />
+              <span>Set as default delivery address</span>
+            </label>
+          </div>
+
           <div className="pt-2 flex items-center gap-3">
             <button
               type="submit"
               disabled={saving}
               className="px-8 py-3 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-white/90 disabled:opacity-50 transition-all"
             >
-              {saving ? "Saving…" : "Save Address"}
+              {saving ? "Saving…" : editingId ? "Update Address" : "Save Address"}
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={resetForm}
               className="px-6 py-3 border border-white/20 text-white text-xs uppercase tracking-widest hover:border-white/40 transition-colors"
             >
               Cancel
@@ -337,51 +451,71 @@ export default function AddressesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {addresses.map((addr) => (
-            <div
-              key={addr.id}
-              className={`border p-5 relative transition-all ${
-                addr.is_default
-                  ? "border-white bg-white/[0.03]"
-                  : "border-white/10 hover:border-white/30"
-              }`}
-            >
-              {addr.is_default && (
-                <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-black bg-white px-2 py-0.5">
-                  <CheckCircle2 className="w-3 h-3 text-black" />
-                  Default
-                </span>
-              )}
-              <p className="text-white font-medium text-base">{addr.full_name}</p>
-              <p className="text-white/60 text-sm mt-1 leading-relaxed">
-                {addr.line1}
-                {addr.line2 ? `, ${addr.line2}` : ""}
-                <br />
-                {addr.city}, {addr.state} — {addr.pincode}
-              </p>
-              <p className="text-white/40 text-xs mt-3 flex items-center gap-2">
-                <span>Phone:</span>
-                <span className="text-white/70 font-mono">{addr.phone}</span>
-              </p>
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/10">
-                {!addr.is_default && (
+          {addresses.map((addr) => {
+            const { tag, cleanLine2 } = parseAddressTag(addr.line2);
+
+            return (
+              <div
+                key={addr.id}
+                className={`border p-5 relative transition-all ${
+                  addr.is_default
+                    ? "border-white bg-white/[0.03]"
+                    : "border-white/10 hover:border-white/30"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 border border-white/20 bg-white/5 text-white/80">
+                    {tag}
+                  </span>
+                  {addr.is_default && (
+                    <span className="flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-black bg-white px-2 py-0.5">
+                      <CheckCircle2 className="w-3 h-3 text-black" />
+                      Default
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-white font-medium text-base">{addr.full_name}</p>
+                <p className="text-white/60 text-sm mt-1 leading-relaxed">
+                  {addr.line1}
+                  {cleanLine2 ? `, ${cleanLine2}` : ""}
+                  <br />
+                  {addr.city}, {addr.state} — {addr.pincode}
+                </p>
+                <p className="text-white/40 text-xs mt-3 flex items-center gap-2">
+                  <span>Phone:</span>
+                  <span className="text-white/70 font-mono">{addr.phone}</span>
+                </p>
+
+                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10 flex-wrap">
                   <button
-                    onClick={() => handleSetDefault(addr.id)}
-                    className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                    onClick={() => handleEdit(addr)}
+                    className="text-xs uppercase tracking-widest text-white/70 hover:text-white transition-colors flex items-center gap-1"
                   >
-                    Set as Default
+                    <Edit2 className="w-3 h-3" />
+                    Edit
                   </button>
-                )}
-                <button
-                  onClick={() => handleDelete(addr.id)}
-                  className="ml-auto text-xs uppercase tracking-widest text-red-400/50 hover:text-red-400 transition-colors flex items-center gap-1"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  Remove
-                </button>
+
+                  {!addr.is_default && (
+                    <button
+                      onClick={() => handleSetDefault(addr.id)}
+                      className="text-xs uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                    >
+                      Set as Default
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handleDelete(addr.id)}
+                    className="ml-auto text-xs uppercase tracking-widest text-red-400/60 hover:text-red-400 transition-colors flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Remove
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

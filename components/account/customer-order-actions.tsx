@@ -32,6 +32,7 @@ interface CustomerOrderActionsProps {
   trackingUrl?: string | null;
   items?: OrderItemWithStock[];
   existingReturns?: OrderReturn[];
+  orderUpdatedAt?: string | null;
 }
 
 const CUSTOMER_CANCEL_REASONS = [
@@ -65,6 +66,7 @@ export function CustomerOrderActions({
   trackingUrl: initialTrackingUrl,
   items = [],
   existingReturns = [],
+  orderUpdatedAt,
 }: CustomerOrderActionsProps) {
   const router = useRouter();
 
@@ -154,13 +156,30 @@ export function CustomerOrderActions({
   const isCancelled = status === "cancelled";
   const isDelivered = status === "delivered";
 
+  // Check 1-day (24-hour) policy window from delivery time
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const isReturnWindowExpired = useMemo(() => {
+    if (!isDelivered) return false;
+    const refTime = orderUpdatedAt ? new Date(orderUpdatedAt).getTime() : NaN;
+    if (isNaN(refTime)) return false;
+    return Date.now() - refTime > ONE_DAY_MS;
+  }, [isDelivered, orderUpdatedAt]);
+
+  const hoursRemaining = useMemo(() => {
+    if (!isDelivered || !orderUpdatedAt) return 0;
+    const refTime = new Date(orderUpdatedAt).getTime();
+    if (isNaN(refTime)) return 0;
+    const remainingMs = ONE_DAY_MS - (Date.now() - refTime);
+    return Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60)));
+  }, [isDelivered, orderUpdatedAt]);
+
   // Check active return/exchange request
   const activeReturn =
     existingReturns.find((r) => ["requested", "approved", "picked_up"].includes(r.status)) ||
     existingReturns[0];
 
   const canRequestReturn =
-    isDelivered && (!activeReturn || activeReturn.status === "rejected");
+    isDelivered && !isReturnWindowExpired && (!activeReturn || activeReturn.status === "rejected");
 
   // Parse tracking info if present in notes or direct fields
   const isShipped = status === "shipped" || status === "delivered" || status === "confirmed";
@@ -464,16 +483,29 @@ export function CustomerOrderActions({
       )}
 
       {/* Action Buttons: Cancel or Return/Exchange */}
-      <div className="flex justify-end items-center gap-3">
+      <div className="flex justify-end items-center gap-3 flex-wrap">
+        {isDelivered && isReturnWindowExpired && (
+          <div className="text-right">
+            <span className="text-[11px] uppercase tracking-wider text-white/40 border border-white/10 px-3 py-1.5 inline-block">
+              Return / Exchange Window Closed (1-Day Policy Expired)
+            </span>
+          </div>
+        )}
+
         {canRequestReturn && (
-          <button
-            type="button"
-            onClick={() => setShowReturnModal(true)}
-            className="text-xs uppercase tracking-widest font-bold px-4 py-2 border border-white/30 text-white hover:bg-white hover:text-black transition-colors flex items-center gap-2"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Request Return / Exchange
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-[11px] text-emerald-400 font-mono tracking-wider">
+              Eligible for Return/Exchange ({hoursRemaining}h left)
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowReturnModal(true)}
+              className="text-xs uppercase tracking-widest font-bold px-4 py-2 border border-white/30 text-white hover:bg-white hover:text-black transition-colors flex items-center gap-2"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Request Return / Exchange
+            </button>
+          </div>
         )}
 
         {isCancellable && (

@@ -139,6 +139,7 @@ export default async function OrderDetailPage({
         trackingUrl={(order as any).tracking_url}
         items={itemsWithVariants}
         existingReturns={existingReturns}
+        orderUpdatedAt={order.updated_at}
       />
 
       {/* Progress Bar */}

@@ -18,20 +18,69 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
 
   // If it's not the "all" collection, look up the category by slug
   if (slug !== "all") {
-    const { data: categoryData } = await supabase
+    let categoryData: { id: string; name: string; slug: string } | null = null;
+
+    // 1. Try exact slug match
+    const { data: exactData } = await supabase
       .from("categories")
-      .select("id, name")
+      .select("id, name, slug")
       .eq("slug", slug)
-      .single();
+      .maybeSingle();
 
-    const category = categoryData as { id: string; name: string } | null;
+    if (exactData) {
+      categoryData = exactData as { id: string; name: string; slug: string };
+    }
 
-    if (!category) {
+    // 2. If not found, match common category aliases (hoodie <-> hoodies, tees <-> t-shirts, etc.)
+    if (!categoryData) {
+      const slugLower = slug.toLowerCase();
+      let alternatives: string[] = [];
+      if (slugLower === "hoodies" || slugLower === "hoodie") {
+        alternatives = ["hoodie", "hoodies"];
+      } else if (
+        slugLower === "tees" ||
+        slugLower === "t-shirts" ||
+        slugLower === "tshirts" ||
+        slugLower === "t-shirt" ||
+        slugLower === "tee"
+      ) {
+        alternatives = ["tees", "t-shirts", "tshirts", "t-shirt", "tee"];
+      }
+
+      if (alternatives.length > 0) {
+        const { data: altData } = await supabase
+          .from("categories")
+          .select("id, name, slug")
+          .in("slug", alternatives)
+          .limit(1)
+          .maybeSingle();
+        if (altData) {
+          categoryData = altData as { id: string; name: string; slug: string };
+        }
+      }
+    }
+
+    // 3. Fallback: match by name pattern
+    if (!categoryData) {
+      const cleanName = slug.replace(/-/g, " ");
+      const { data: nameData } = await supabase
+        .from("categories")
+        .select("id, name, slug")
+        .ilike("name", `%${cleanName}%`)
+        .limit(1)
+        .maybeSingle();
+      if (nameData) {
+        categoryData = nameData as { id: string; name: string; slug: string };
+      }
+    }
+
+    if (!categoryData) {
       notFound();
     }
 
-    categoryId = category.id;
-    collectionTitle = category.name;
+    const matchedCategory: { id: string; name: string; slug: string } = categoryData;
+    categoryId = matchedCategory.id;
+    collectionTitle = matchedCategory.name;
   }
 
   // Fetch active products with their images

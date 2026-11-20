@@ -162,7 +162,7 @@ export async function POST(
 
     // 1. Fetch order and verify ownership & status
     const { data: order, error: orderErr } = await (adminDb.from("orders") as any)
-      .select("id, user_id, status, notes")
+      .select("id, user_id, status, notes, updated_at")
       .eq("id", id)
       .single();
 
@@ -177,6 +177,18 @@ export async function POST(
     if (order.status !== "delivered") {
       return NextResponse.json(
         { error: "Returns and exchanges can only be requested once the order has been delivered." },
+        { status: 400 }
+      );
+    }
+
+    // Check 1-day (24-hour) policy window from delivery time
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const deliveryTimestamp = order.updated_at ? new Date(order.updated_at).getTime() : NaN;
+    if (!isNaN(deliveryTimestamp) && Date.now() - deliveryTimestamp > ONE_DAY_MS) {
+      return NextResponse.json(
+        {
+          error: "The exchange and return window for this order has expired. In accordance with our store policy, return or exchange requests must be submitted within 24 hours of delivery.",
+        },
         { status: 400 }
       );
     }

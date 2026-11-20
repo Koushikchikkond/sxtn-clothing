@@ -3,7 +3,7 @@
 import React from "react";
 import { CircularGallery, GalleryItem } from "@/components/ui/circular-gallery";
 import type { CommunityGalleryConfig } from "@/lib/community-gallery";
-import { Sparkles, Instagram } from "lucide-react";
+import { Instagram } from "lucide-react";
 
 interface CommunityGallerySectionProps {
   config: CommunityGalleryConfig;
@@ -30,11 +30,6 @@ export function CommunityGallerySection({ config }: CommunityGallerySectionProps
 
       {/* Header */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 text-center mb-12 md:mb-16">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 text-[11px] uppercase tracking-widest text-white/80 mb-4">
-          <Sparkles className="w-3.5 h-3.5 text-white/70" />
-          <span>{config.hashtag || "#6XTN COMMUNITY"}</span>
-        </div>
-
         <h2 className="font-display text-4xl sm:text-6xl md:text-7xl uppercase tracking-tight text-white">
           {config.title || "WORN BY YOU"}
         </h2>
