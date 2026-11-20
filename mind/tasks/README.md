@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-21-coverflow-carousel-community-showcase|2026-11-21 Replace 3D Circular Showcase with Coverflow Carousel Animation]]
 - [[2026-11-20-delivery-email-rating-and-reviews-marquee|2026-11-20 Delivery Email Rating Flow, Customer Reviews Marquee & Order Thumbnails]]
 - [[2026-11-20-animated-curved-menu-integration|2026-11-20 Animated Curved Menu Integration (Left Side)]]
 - [[2026-11-20-ponytail-customer-care-and-ux-updates|2026-11-20 1-Day Return Window, Sidebar Collections Menu, Address Editing with Tags, and Showcase Badge Removal]]

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CircularGallery, GalleryItem } from "@/components/ui/circular-gallery";
+import { CoverflowCarousel, CoverflowSlide } from "@/components/ui/coverflow-carousel";
 import type { CommunityGalleryItem, CommunityGalleryConfig } from "@/lib/community-gallery";
 import { DEFAULT_COMMUNITY_GALLERY } from "@/lib/community-gallery";
 
@@ -276,18 +276,15 @@ export function CommunityGalleryManager() {
     );
   }
 
-  // Gallery items for live preview
-  const previewGalleryItems: GalleryItem[] = items
+  // Slides for live preview
+  const previewSlides: CoverflowSlide[] = items
     .filter((it) => Boolean(it.image_url))
     .map((it) => ({
-      common: it.customer_name || "Customer",
-      binomial: it.tshirt_name || "6XTN TEE",
-      photo: {
-        url: it.image_url,
-        text: `${it.customer_name} wearing ${it.tshirt_name}`,
-        pos: "center",
-        by: it.caption || "#6XTN",
-      },
+      src: it.image_url,
+      alt: `${it.customer_name} wearing ${it.tshirt_name}`,
+      title: it.customer_name || "6XTN Community",
+      subtitle: it.tshirt_name || "Streetwear Drop",
+      meta: it.caption ? [{ label: "Caption", value: it.caption }] : undefined,
     }));
 
   return (
@@ -460,31 +457,41 @@ export function CommunityGalleryManager() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "10px" }}>
           <div>
             <span style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", color: "#a1a1aa" }}>
-              3D Circular Motion Simulator
+              Coverflow 3D Card Slide Simulator
             </span>
             <h3 style={{ margin: "2px 0 0 0", fontSize: "1.1rem", fontWeight: 800, textTransform: "uppercase" }}>
-              Homepage Customer Gallery Preview ({previewGalleryItems.length} Photo{previewGalleryItems.length !== 1 ? "s" : ""})
+              Homepage Customer Gallery Preview ({previewSlides.length} Photo{previewSlides.length !== 1 ? "s" : ""})
             </h3>
           </div>
           <span style={{ fontSize: "0.72rem", color: "#888", fontStyle: "italic" }}>
-            Drag with mouse or scroll to spin
+            Drag or swipe cards to navigate
           </span>
         </div>
 
         <div
           style={{
-            height: "380px",
             background: "#000",
             border: "1px solid #27272a",
             borderRadius: "6px",
             overflow: "hidden",
             position: "relative",
+            padding: "1rem 0",
           }}
         >
-          {previewGalleryItems.length > 0 ? (
-            <CircularGallery items={previewGalleryItems} radius={320} autoRotateSpeed={0.04} />
+          {previewSlides.length > 0 ? (
+            <CoverflowCarousel
+              slides={
+                previewSlides.length < 5
+                  ? [...previewSlides, ...previewSlides, ...previewSlides].slice(0, 6)
+                  : previewSlides
+              }
+              cardWidth="220px"
+              showNavigation={true}
+              showCaption={true}
+              showPagination={true}
+            />
           ) : (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#666", fontSize: "0.85rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "200px", color: "#666", fontSize: "0.85rem" }}>
               No images uploaded yet. Add photos below.
             </div>
           )}
