@@ -385,6 +385,44 @@ export type Database = {
         };
         Relationships: [];
       };
+
+      order_reviews: {
+        Row: {
+          id:             string;
+          order_id:       string;
+          user_id:        string | null;
+          customer_name:  string;
+          customer_city:  string | null;
+          customer_state: string | null;
+          rating:         number;
+          comment:        string | null;
+          product_name:   string | null;
+          is_approved:    boolean;
+          created_at:     string;
+          updated_at:     string;
+        };
+        Insert: {
+          id?:             string;
+          order_id:        string;
+          user_id?:        string | null;
+          customer_name:   string;
+          customer_city?:  string | null;
+          customer_state?: string | null;
+          rating:          number;
+          comment?:        string | null;
+          product_name?:   string | null;
+          is_approved?:    boolean;
+          created_at?:     string;
+          updated_at?:     string;
+        };
+        Update: {
+          rating?:         number;
+          comment?:        string | null;
+          is_approved?:    boolean;
+          updated_at?:     string;
+        };
+        Relationships: [];
+      };
     };
 
     Views: Record<string, never>;
@@ -419,6 +457,7 @@ export type Order          = Tables<"orders">;
 export type OrderItem      = Tables<"order_items">;
 export type Wishlist       = Tables<"wishlists">;
 export type OrderReturn    = Tables<"order_returns">;
+export type OrderReview    = Tables<"order_reviews">;
 
 export type OrderStatus       = Order["status"];
 export type OrderReturnType   = OrderReturn["type"];

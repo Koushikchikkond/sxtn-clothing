@@ -16,10 +16,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const nextParam = searchParams?.get("next") || searchParams?.get("redirectTo") || "/account";
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextParam)}`,
         },
       });
 

@@ -419,6 +419,36 @@ export function getOrderStatusUpdateHtml(params: {
       </table>
     </div>
 
+    <!-- Rating and Feedback Callout for Delivered Orders -->
+    ${
+      status === "delivered"
+        ? `
+      <div style="background: #141414; border: 1px solid #2a2a2a; border-radius: 4px; padding: 26px 20px; margin-bottom: 24px; text-align: center;">
+        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #f59e0b; margin-bottom: 8px;">
+          Rate Your Drop
+        </div>
+        <h3 style="font-size: 18px; font-weight: 800; color: #ffffff; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+          How does your 6XTN piece feel?
+        </h3>
+        <p style="font-size: 13px; color: #999999; line-height: 1.6; margin: 0 auto 16px auto; max-width: 440px;">
+          We obsess over every detail — from our 280 GSM heavyweight cotton to the boxy cut. Tap below to rate your order with up to 5 stars.
+        </p>
+        <div style="font-size: 28px; color: #f59e0b; letter-spacing: 6px; margin-bottom: 20px;">
+          ★★★★★
+        </div>
+        <div>
+          <a href="${SITE_URL}/account/orders/${orderId}?rate=true" class="btn" style="background: #ffffff; color: #000000; font-weight: 900; letter-spacing: 0.15em; padding: 14px 28px; display: inline-block;">
+            Rate Order & Feedback →
+          </a>
+        </div>
+        <div style="font-size: 11px; color: #666666; margin-top: 12px;">
+          Takes 30 seconds · Helps us perfect upcoming drops
+        </div>
+      </div>
+    `
+        : ""
+    }
+
     ${
       trackingUrl
         ? `
@@ -428,13 +458,15 @@ export function getOrderStatusUpdateHtml(params: {
         </a>
       </div>
     `
-        : `
+        : status !== "delivered"
+        ? `
       <div style="text-align: center; margin-bottom: 24px;">
         <a href="${SITE_URL}/account/orders" class="btn">
           View Order Details
         </a>
       </div>
     `
+        : ""
     }
   `;
 

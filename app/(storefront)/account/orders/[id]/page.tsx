@@ -2,8 +2,9 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import React from "react";
-import type { Order, OrderItem, OrderReturn } from "@/types/database.types";
+import type { Order, OrderItem, OrderReturn, OrderReview } from "@/types/database.types";
 import { CustomerOrderActions } from "@/components/account/customer-order-actions";
+import { CustomerOrderRating } from "@/components/account/customer-order-rating";
 
 const STATUS_COLOURS: Record<string, string> = {
   pending: "#f59e0b",
@@ -24,7 +25,7 @@ export default async function OrderDetailPage({
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/account/orders/${id}`)}`);
 
   const { data: orderRaw } = await supabase
     .from("orders")
@@ -91,8 +92,30 @@ export default async function OrderDetailPage({
 
   const existingReturns = (returnsRaw as unknown as OrderReturn[]) ?? [];
 
+  let existingReview: OrderReview | null = null;
+  if (order.status === "delivered") {
+    try {
+      const { data: revData } = await (supabase.from("order_reviews") as any)
+        .select("*")
+        .eq("order_id", id)
+        .maybeSingle();
+      existingReview = (revData as unknown as OrderReview) ?? null;
+    } catch {
+      existingReview = null;
+    }
+  }
+
   const address = order.shipping_address as Record<string, string> | null;
   const currentStep = STATUS_STEPS.indexOf(order.status);
+
+  const customerName =
+    address?.full_name ||
+    address?.fullName ||
+    user.user_metadata?.full_name ||
+    "Verified Customer";
+  const customerCity = address?.city || "India";
+  const customerState = address?.state || "";
+  const primaryProductName = productNames.length > 0 ? productNames.join(", ") : undefined;
 
   return (
     <div className="pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto min-h-screen">
@@ -141,6 +164,19 @@ export default async function OrderDetailPage({
         existingReturns={existingReturns}
         orderUpdatedAt={order.updated_at}
       />
+
+      {/* 5-Star Customer Rating & Feedback for Delivered Orders */}
+      {order.status === "delivered" && (
+        <CustomerOrderRating
+          orderId={order.id}
+          status={order.status}
+          initialReview={existingReview}
+          customerName={customerName}
+          customerCity={customerCity}
+          customerState={customerState}
+          productName={primaryProductName}
+        />
+      )}
 
       {/* Progress Bar */}
       {order.status !== "cancelled" && (

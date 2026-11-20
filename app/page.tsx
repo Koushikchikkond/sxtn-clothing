@@ -3,8 +3,10 @@ import { ArrowRight, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getHeroBanner } from "@/lib/hero-banner";
 import { getCommunityGallery } from "@/lib/community-gallery";
+import { getReviews } from "@/lib/reviews";
 import { HeroBannerSlider } from "@/components/storefront/hero-banner-slider";
 import { CommunityGallerySection } from "@/components/storefront/community-gallery-section";
+import { CustomerReviewsMarquee } from "@/components/storefront/customer-reviews-marquee";
 import { ProductCard } from "@/components/storefront/product-card";
 import type { Product, ProductImage } from "@/types/database.types";
 
@@ -16,7 +18,7 @@ type ProductWithCover = Product & {
 export default async function Home() {
   const supabase = await createClient();
 
-  const [productsRes, heroBanner, communityGallery] = await Promise.all([
+  const [productsRes, heroBanner, communityGallery, reviews] = await Promise.all([
     supabase
       .from("products")
       .select(`
@@ -29,6 +31,7 @@ export default async function Home() {
       .limit(8),
     getHeroBanner(supabase),
     getCommunityGallery(supabase),
+    getReviews(supabase),
   ]);
 
   const products = (productsRes.data as unknown as ProductWithCover[]) ?? [];
@@ -86,6 +89,9 @@ export default async function Home() {
 
       {/* ─── Customer Community Photos (3D Circular Animated Showcase) ────────── */}
       <CommunityGallerySection config={communityGallery} />
+
+      {/* ─── Customer Reviews & Star Ratings (Left-to-Right Moving Marquee) ─── */}
+      <CustomerReviewsMarquee reviews={reviews} />
 
       {/* Spacer for mobile bottom nav */}
       <div className="h-24 md:hidden" />
