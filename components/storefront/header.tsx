@@ -3,267 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { ShoppingBag, X, User, ChevronDown } from "lucide-react";
+import { ShoppingBag, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/lib/stores/cart.store";
 import { createClient } from "@/lib/supabase/client";
+import { CurvedNavbar, CurvedMenuTrigger, iCategoryItem } from "@/components/ui/curved-menu";
 
-const OTHER_NAV_LINKS = [
-  { href: "/account", label: "Account" },
-  { href: "/account/orders", label: "Orders" },
-  { href: "/account/wishlist", label: "Wishlist" },
-];
 
-// ── Full-Screen Slide Menu (shared mobile + desktop) ───────────
-function FullScreenMenu({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [collections, setCollections] = useState<Array<{ name: string; slug: string }>>([
-    { name: "Tees", slug: "tees" },
-    { name: "Hoodies", slug: "hoodie" },
-  ]);
-  const [collectionsExpanded, setCollectionsExpanded] = useState(true);
-  const supabase = createClient();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setLoggedIn(!!data.user);
-    });
-
-    // Fetch live categories/collections from admin
-    supabase
-      .from("categories")
-      .select("id, name, slug")
-      .order("name")
-      .then(({ data }) => {
-        const catList = (data as any[]) || [];
-        if (catList.length > 0) {
-          const list: Array<{ name: string; slug: string }> = [];
-
-          // 1. Tees first
-          const teesCat = catList.find(
-            (c: any) =>
-              c.slug === "tees" ||
-              c.slug === "t-shirts" ||
-              (c.name && String(c.name).toLowerCase().includes("tee"))
-          );
-          list.push({
-            name: "Tees",
-            slug: (teesCat && teesCat.slug) ? String(teesCat.slug) : "tees",
-          });
-
-          // 2. Hoodies second
-          const hoodieCat = catList.find(
-            (c: any) =>
-              c.slug === "hoodie" ||
-              c.slug === "hoodies" ||
-              (c.name && String(c.name).toLowerCase().includes("hoodie"))
-          );
-          list.push({
-            name: "Hoodies",
-            slug: (hoodieCat && hoodieCat.slug) ? String(hoodieCat.slug) : "hoodie",
-          });
-
-          // 3. Other collections from admin
-          catList.forEach((c: any) => {
-            const isTee =
-              c.slug === "tees" ||
-              c.slug === "t-shirts" ||
-              (c.name && String(c.name).toLowerCase().includes("tee"));
-            const isHoodie =
-              c.slug === "hoodie" ||
-              c.slug === "hoodies" ||
-              (c.name && String(c.name).toLowerCase().includes("hoodie"));
-            if (!isTee && !isHoodie && c.slug) {
-              list.push({ name: String(c.name || c.slug), slug: String(c.slug) });
-            }
-          });
-
-          setCollections(list);
-        }
-      });
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setLoggedIn(false);
-    onClose();
-    window.location.href = "/";
-  };
-
-  // Lock body scroll when open
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ x: "-100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "-100%" }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed inset-0 z-[80] bg-black text-white flex flex-col"
-        >
-          {/* Header row */}
-          <div className="flex justify-between items-center px-6 pt-8 pb-6 border-b border-white/10 shrink-0">
-            <Link href="/" onClick={onClose}>
-              <Image
-                src="/brand-logo.svg"
-                alt="6XTN"
-                width={80}
-                height={32}
-                className="h-8 w-auto invert"
-              />
-            </Link>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close menu"
-              className="h-10 w-10 flex items-center justify-center rounded-full border border-white/20 hover:bg-white/10 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Nav items */}
-          <nav className="flex-1 overflow-y-auto px-8 py-8 flex flex-col justify-center gap-5 sm:gap-6" aria-label="Full screen navigation">
-            {/* Home */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <Link
-                href="/"
-                onClick={onClose}
-                className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 block"
-              >
-                Home
-              </Link>
-            </motion.div>
-
-            {/* Collections with Submenu */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setCollectionsExpanded((v) => !v)}
-                  className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 flex items-center gap-3 text-left"
-                >
-                  <span>Collections</span>
-                  <ChevronDown
-                    className={`w-5 h-5 sm:w-6 sm:h-6 text-white/50 transition-transform duration-200 ${
-                      collectionsExpanded ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-                <Link
-                  href="/collections/all"
-                  onClick={onClose}
-                  className="text-[11px] sm:text-xs uppercase tracking-widest text-white/40 hover:text-white underline underline-offset-4"
-                >
-                  Shop All
-                </Link>
-              </div>
-
-              {collectionsExpanded && (
-                <div className="pl-4 sm:pl-6 border-l border-white/20 space-y-2.5 py-1">
-                  {collections.map((col) => (
-                    <Link
-                      key={col.slug}
-                      href={`/collections/${col.slug}`}
-                      onClick={onClose}
-                      className="block text-sm sm:text-base uppercase tracking-widest text-white/70 hover:text-white hover:translate-x-1 transition-all duration-150"
-                    >
-                      {col.name}
-                    </Link>
-                  ))}
-                  <Link
-                    href="/collections/all"
-                    onClick={onClose}
-                    className="block text-xs uppercase tracking-widest text-white/40 hover:text-white hover:translate-x-1 transition-all duration-150 pt-1"
-                  >
-                    View All Collections →
-                  </Link>
-                </div>
-              )}
-            </motion.div>
-
-            {/* Other static links */}
-            {OTHER_NAV_LINKS.map((link, i) => (
-              <motion.div
-                key={link.href}
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.18 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <Link
-                  href={link.href}
-                  onClick={onClose}
-                  className="font-display text-2xl sm:text-3xl md:text-4xl uppercase tracking-widest text-white hover:text-white/60 transition-colors duration-200 block"
-                >
-                  {link.label}
-                </Link>
-              </motion.div>
-            ))}
-          </nav>
-
-          {/* Footer auth actions */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="px-8 pb-10 pt-6 border-t border-white/10 flex items-center gap-4 shrink-0"
-          >
-            {loggedIn ? (
-              <button
-                onClick={handleSignOut}
-                className="text-sm font-medium tracking-widest uppercase text-white/50 hover:text-red-400 transition-colors"
-              >
-                Sign Out
-              </button>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={onClose}
-                  className="px-6 py-3 bg-white text-black text-sm font-bold tracking-widest uppercase hover:bg-white/90 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={onClose}
-                  className="text-sm font-medium tracking-widest uppercase text-white/50 hover:text-white transition-colors"
-                >
-                  Create Account
-                </Link>
-              </>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
 
 // ── Desktop Profile Dropdown ───────────────────────────────────
 function ProfileDropdown() {
@@ -380,12 +127,68 @@ function ProfileDropdown() {
 // ── Main Header ────────────────────────────────────────────────
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collections, setCollections] = useState<iCategoryItem[]>([
+    { name: "Tees", slug: "tees" },
+    { name: "Hoodies", slug: "hoodie" },
+  ]);
   const [isScrolling, setIsScrolling] = useState(false);
   const [mounted, setMounted] = useState(false);
   const cartCount = useCartStore((s) => s.itemCount());
   const openCart = useCartStore((s) => s.openCart);
+  const supabase = createClient();
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    supabase
+      .from("categories")
+      .select("id, name, slug")
+      .order("name")
+      .then(({ data }) => {
+        const catList = (data as any[]) || [];
+        if (catList.length > 0) {
+          const list: iCategoryItem[] = [];
+
+          const teesCat = catList.find(
+            (c: any) =>
+              c.slug === "tees" ||
+              c.slug === "t-shirts" ||
+              (c.name && String(c.name).toLowerCase().includes("tee"))
+          );
+          list.push({
+            name: "Tees",
+            slug: teesCat?.slug ? String(teesCat.slug) : "tees",
+          });
+
+          const hoodieCat = catList.find(
+            (c: any) =>
+              c.slug === "hoodie" ||
+              c.slug === "hoodies" ||
+              (c.name && String(c.name).toLowerCase().includes("hoodie"))
+          );
+          list.push({
+            name: "Hoodies",
+            slug: hoodieCat?.slug ? String(hoodieCat.slug) : "hoodie",
+          });
+
+          catList.forEach((c: any) => {
+            const isTee =
+              c.slug === "tees" ||
+              c.slug === "t-shirts" ||
+              (c.name && String(c.name).toLowerCase().includes("tee"));
+            const isHoodie =
+              c.slug === "hoodie" ||
+              c.slug === "hoodies" ||
+              (c.name && String(c.name).toLowerCase().includes("hoodie"));
+            if (!isTee && !isHoodie && c.slug) {
+              list.push({ name: String(c.name || c.slug), slug: String(c.slug) });
+            }
+          });
+
+          setCollections(list);
+        }
+      });
+  }, [supabase]);
 
   useEffect(() => {
     let scrollTimeout: ReturnType<typeof setTimeout>;
@@ -400,26 +203,25 @@ export function Header() {
 
   return (
     <>
+      {/* ── Animated Curved Menu (Black Themed, Left Side) ──────── */}
+      <CurvedNavbar
+        isActive={menuOpen}
+        setIsActive={setMenuOpen}
+        collections={collections}
+      />
+
       {/* ── Desktop Header ─────────────────────────────────────── */}
-      <header className="hidden md:block fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+      <header className="hidden md:block fixed top-0 left-0 right-0 z-[60] transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-20 relative">
 
-            {/* Left: Menu button */}
-            <button
-              type="button"
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              className="flex items-center gap-2 text-white hover:opacity-70 transition-opacity"
-            >
-              {/* Hamburger lines */}
-              <div className="flex flex-col gap-[5px]">
-                <span className="block w-6 h-[1.5px] bg-white" />
-                <span className="block w-4 h-[1.5px] bg-white" />
-                <span className="block w-6 h-[1.5px] bg-white" />
-              </div>
-              <span className="text-xs font-medium tracking-[0.2em] uppercase ml-1">Menu</span>
-            </button>
+            {/* Left: Animated Menu trigger */}
+            <div className="flex items-center">
+              <CurvedMenuTrigger
+                isActive={menuOpen}
+                onClick={() => setMenuOpen((prev) => !prev)}
+              />
+            </div>
 
             {/* Center: Logo */}
             <div className="absolute left-1/2 -translate-x-1/2">
@@ -463,23 +265,18 @@ export function Header() {
       </header>
 
       {/* ── Mobile Top Bar ─────────────────────────────────────── */}
-      {/* Menu button (top-left) + Logo (center) + Cart (top-right) */}
+      {/* Menu trigger (top-left) + Logo (center) + Cart (top-right) */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-4 pt-4 pb-8 bg-gradient-to-b from-black/70 to-transparent"
+        className="md:hidden fixed top-0 left-0 right-0 z-[60] flex justify-between items-center px-4 pt-4 pb-8 bg-gradient-to-b from-black/70 to-transparent"
         style={{ pointerEvents: "none" }}
       >
-        {/* Left: Hamburger menu trigger */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          aria-label="Open menu"
-          style={{ pointerEvents: "auto" }}
-          className="flex flex-col gap-[5px] p-2"
-        >
-          <span className="block w-6 h-[1.5px] bg-white" />
-          <span className="block w-4 h-[1.5px] bg-white" />
-          <span className="block w-6 h-[1.5px] bg-white" />
-        </button>
+        {/* Left: Animated Menu trigger */}
+        <div className="flex items-center">
+          <CurvedMenuTrigger
+            isActive={menuOpen}
+            onClick={() => setMenuOpen((prev) => !prev)}
+          />
+        </div>
 
         {/* Center: Brand logo */}
         <Link href="/" style={{ pointerEvents: "auto" }} className="absolute left-1/2 -translate-x-1/2 top-4">
@@ -514,7 +311,7 @@ export function Header() {
       {/* ── Mobile Bottom Capsule Nav (NO menu button, glass effect) ── */}
       <div
         className={cn(
-          "md:hidden fixed bottom-6 left-4 right-4 z-50",
+          "md:hidden fixed bottom-6 left-4 right-4 z-40",
           "flex items-center gap-3",
           "transition-transform duration-300 ease-in-out",
           isScrolling ? "translate-y-28" : "translate-y-0"
@@ -579,9 +376,6 @@ export function Header() {
           </button>
         </nav>
       </div>
-
-      {/* ── Full-Screen Slide Menu (mobile + desktop) ──────────── */}
-      <FullScreenMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
   );
 }
