@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { claimUserOrdersByEmail } from "@/lib/orders";
 import Link from "next/link";
 import Image from "next/image";
 import type { Order } from "@/types/database.types";
@@ -14,6 +16,7 @@ interface OrderItemRow {
 }
 
 type OrderRow = Pick<Order, "id" | "status" | "total" | "subtotal" | "shipping_fee" | "created_at"> & {
+  guest_email?: string | null;
   order_items?: OrderItemRow[];
 };
 
@@ -28,29 +31,46 @@ const STATUS_COLOURS: Record<string, string> = {
 
 export default async function OrdersPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/account/orders");
 
-  const [ordersRes, productsRes] = await Promise.all([
-    (supabase.from("orders") as any)
+  const adminDb = createAdminClient();
+
+  // Auto-claim any unlinked orders with user's email
+  if (user.email) {
+    try {
+      await claimUserOrdersByEmail(user.id, user.email);
+    } catch (claimErr) {
+      console.warn("[OrdersPage] Auto-claim notice:", claimErr);
+    }
+  }
+
+  const [ordersRes, productsRes, reviewsRes] = await Promise.all([
+    (adminDb.from("orders") as any)
       .select(`
-        id, status, total, subtotal, shipping_fee, created_at,
+        id, status, total, subtotal, shipping_fee, created_at, guest_email,
         order_items (
           id, product_name, variant_id, size, color, quantity
         )
       `)
-      .eq("user_id", user.id)
+      .or(user.email ? `user_id.eq.${user.id},guest_email.ilike.${user.email.trim().toLowerCase()}` : `user_id.eq.${user.id}`)
       .neq("status", "pending")
       .order("created_at", { ascending: false }),
-    (supabase.from("products") as any)
+    (adminDb.from("products") as any)
       .select(`
         id, name,
         product_images ( url, position ),
         product_variants ( id )
       `),
+    (adminDb.from("order_reviews") as any)
+      .select("order_id, rating, comment"),
   ]);
 
   const orders = (ordersRes.data as unknown as OrderRow[]) ?? [];
+  const reviewsData = (reviewsRes.data as Array<{ order_id: string; rating: number; comment?: string }>) || [];
+  const reviewsByOrder = new Map(reviewsData.map((r) => [r.order_id, r]));
 
   // Map product names and variant IDs to primary product images
   const nameToImageMap: Record<string, string> = {};
@@ -135,8 +155,10 @@ export default async function OrdersPage() {
                   (productNames.length > 2 ? ` +${productNames.length - 2} more` : "")
                 : "6XTN Clothing";
 
+            const existingReview = reviewsByOrder.get(order.id);
+
             return (
-              <li key={order.id}>
+              <li key={order.id} className="overflow-hidden">
                 <Link
                   href={`/account/orders/${order.id}`}
                   className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border border-white/10 hover:border-white/30 transition-colors group gap-4 bg-[#0a0a0a]"
@@ -234,6 +256,40 @@ export default async function OrdersPage() {
                     </span>
                   </div>
                 </Link>
+
+                {/* Rating & Feedback Section Below Order for Delivered Orders */}
+                {order.status === "delivered" && (
+                  <div className="px-4 py-2.5 bg-zinc-950 border-x border-b border-white/10 flex items-center justify-between flex-wrap gap-2">
+                    {existingReview ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center text-amber-400 text-xs tracking-wider">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i} className={i < existingReview.rating ? "text-amber-400" : "text-white/20"}>
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-[11px] font-mono text-white/70">
+                          {existingReview.rating}/5 Verified Rating
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-400 text-xs tracking-widest">★★★★★</span>
+                        <span className="text-white/60 text-xs font-sans">
+                          How does your piece feel?
+                        </span>
+                      </div>
+                    )}
+
+                    <Link
+                      href={`/account/orders/${order.id}?rate=true`}
+                      className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-400 hover:text-white underline transition-colors"
+                    >
+                      {existingReview ? "Edit Review" : "Rate Order & Feedback →"}
+                    </Link>
+                  </div>
+                )}
               </li>
             );
           })}

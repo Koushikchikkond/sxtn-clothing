@@ -184,7 +184,7 @@ const baseEmailWrapper = (title: string, content: string) => `
     </div>
     <div class="footer">
       <p>© ${new Date().getFullYear()} ${BRAND_NAME}. All rights reserved.</p>
-      <p>Questions? Reach out to support at <a href="mailto:support@6xtn.in">support@6xtn.in</a></p>
+      <p>Questions? Reach out to support at <a href="mailto:6xtn.in@gmail.com">6xtn.in@gmail.com</a></p>
     </div>
   </div>
 </body>
@@ -431,7 +431,7 @@ export function getOrderStatusUpdateHtml(params: {
           How does your 6XTN piece feel?
         </h3>
         <p style="font-size: 13px; color: #999999; line-height: 1.6; margin: 0 auto 16px auto; max-width: 440px;">
-          We obsess over every detail — from our 280 GSM heavyweight cotton to the boxy cut. Tap below to rate your order with up to 5 stars.
+          We obsess over every detail — from our 240 GSM heavyweight cotton to the boxy cut. Tap below to rate your order with up to 5 stars.
         </p>
         <div style="font-size: 28px; color: #f59e0b; letter-spacing: 6px; margin-bottom: 20px;">
           ★★★★★

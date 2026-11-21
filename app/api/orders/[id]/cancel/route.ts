@@ -49,7 +49,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "This order has already been dispatched/delivered. Please contact support@6xtn.in for returns.",
+            "This order has already been dispatched/delivered. Please contact 6xtn.in@gmail.com for returns.",
         },
         { status: 400 }
       );

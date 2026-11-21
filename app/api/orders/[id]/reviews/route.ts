@@ -10,15 +10,6 @@ export async function GET(
 ) {
   try {
     const { id: orderId } = await params;
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const adminDb = createAdminClient();
     const { data: review } = await (adminDb.from("order_reviews") as any)
       .select("*")
@@ -45,10 +36,6 @@ export async function POST(
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: "Please sign in to rate your order." }, { status: 401 });
-    }
-
     const body = await req.json().catch(() => null);
     if (!body || typeof body.rating !== "number") {
       return NextResponse.json({ error: "Invalid rating value." }, { status: 400 });
@@ -59,18 +46,14 @@ export async function POST(
 
     const adminDb = createAdminClient();
 
-    // Verify order exists, belongs to user, and is delivered
+    // Verify order exists and is delivered
     const { data: order, error: orderErr } = await (adminDb.from("orders") as any)
-      .select("id, user_id, status, shipping_address, order_items(product_name)")
+      .select("id, user_id, guest_email, status, shipping_address, order_items(product_name)")
       .eq("id", orderId)
       .maybeSingle();
 
     if (orderErr || !order) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
-    }
-
-    if (order.user_id !== user.id) {
-      return NextResponse.json({ error: "Unauthorized for this order." }, { status: 403 });
     }
 
     if (order.status !== "delivered") {
@@ -80,11 +63,26 @@ export async function POST(
       );
     }
 
+    const orderEmail = (order.guest_email || (order.shipping_address as any)?.email)?.trim().toLowerCase();
+    const userEmail = user?.email?.trim().toLowerCase();
+
+    // If authenticated, verify and auto-claim if not already linked
+    if (user) {
+      const isOwner = order.user_id === user.id || (orderEmail && userEmail && orderEmail === userEmail);
+      if (isOwner && !order.user_id) {
+        try {
+          await (adminDb.from("orders") as any).update({ user_id: user.id }).eq("id", orderId);
+        } catch (linkErr) {
+          console.warn("[review auto-link] Notice:", linkErr);
+        }
+      }
+    }
+
     const addr = (order.shipping_address as Record<string, any>) || {};
     const customerName =
       addr.full_name ||
       addr.fullName ||
-      user.user_metadata?.full_name ||
+      user?.user_metadata?.full_name ||
       "Verified Customer";
     const customerCity = addr.city || "India";
     const customerState = addr.state || "";
@@ -96,7 +94,7 @@ export async function POST(
 
     const payload = {
       order_id: orderId,
-      user_id: user.id,
+      user_id: user?.id || order.user_id || null,
       customer_name: customerName,
       customer_city: customerCity,
       customer_state: customerState,

@@ -1,10 +1,12 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
 import React from "react";
 import type { Order, OrderItem, OrderReturn, OrderReview } from "@/types/database.types";
 import { CustomerOrderActions } from "@/components/account/customer-order-actions";
 import { CustomerOrderRating } from "@/components/account/customer-order-rating";
+import { AlertCircle, LogIn, Sparkles } from "lucide-react";
 
 const STATUS_COLOURS: Record<string, string> = {
   pending: "#f59e0b",
@@ -19,26 +21,90 @@ const STATUS_STEPS = ["pending", "paid", "confirmed", "shipped", "delivered"];
 
 export default async function OrderDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ rate?: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/account/orders/${id}`)}`);
+  const sParams = searchParams ? await searchParams : {};
+  const isRateMode = sParams.rate === "true";
 
-  const { data: orderRaw } = await supabase
-    .from("orders")
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Use adminDb to bypass strict RLS that hides orders where user_id is null (e.g. guest checkout)
+  const adminDb = createAdminClient();
+  const { data: orderRaw, error: orderErr } = await (adminDb.from("orders") as any)
     .select("*")
     .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!orderRaw || (orderRaw as any).status === "pending") notFound();
+  // If order does not exist or was never confirmed/paid, return 404
+  if (orderErr || !orderRaw || orderRaw.status === "pending") {
+    notFound();
+  }
+
   const order = orderRaw as unknown as Order;
+  const orderEmail = (order.guest_email || (order.shipping_address as any)?.email)?.trim().toLowerCase();
+  const userEmail = user?.email?.trim().toLowerCase();
 
-  const { data: itemsRaw } = await supabase
-    .from("order_items")
+  // Auto-claim order if authenticated user's email matches order's email
+  let isOwner = false;
+  if (user) {
+    if (order.user_id === user.id) {
+      isOwner = true;
+    } else if (orderEmail && userEmail && orderEmail === userEmail) {
+      isOwner = true;
+      try {
+        await (adminDb.from("orders") as any).update({ user_id: user.id }).eq("id", id);
+        order.user_id = user.id;
+      } catch (linkErr) {
+        console.warn("[OrderDetailPage] Auto-claim notice:", linkErr);
+      }
+    }
+  }
+
+  // If user is logged in with an account that doesn't match this order and order is not delivered:
+  if (user && !isOwner && order.status !== "delivered") {
+    return (
+      <div className="pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-xl mx-auto min-h-screen text-center">
+        <div className="p-8 border border-white/10 bg-[#0a0a0a]">
+          <AlertCircle className="w-10 h-10 text-amber-400 mx-auto mb-4" />
+          <h1 className="font-display text-2xl uppercase tracking-wider text-white mb-2">
+            Different Account Detected
+          </h1>
+          <p className="text-white/60 text-sm mb-6 leading-relaxed">
+            You are currently signed in as <strong>{user.email}</strong>, but this order was placed under a different address ({orderEmail ? `${orderEmail.slice(0, 3)}***@${orderEmail.split("@")[1]}` : "another email"}).
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link
+              href={`/login?next=${encodeURIComponent(`/account/orders/${id}${isRateMode ? "?rate=true" : ""}`)}`}
+              className="w-full bg-white text-black py-3 rounded text-xs font-bold uppercase tracking-widest hover:bg-white/90 transition-colors"
+            >
+              Sign In with Order Email
+            </Link>
+            <Link
+              href="/account/orders"
+              className="text-xs uppercase tracking-widest text-white/40 hover:text-white"
+            >
+              Back to My Orders
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not logged in and order is NOT delivered: redirect to login with full return URL
+  if (!user && order.status !== "delivered") {
+    redirect(`/login?next=${encodeURIComponent(`/account/orders/${id}${isRateMode ? "?rate=true" : ""}`)}`);
+  }
+
+  // Fetch items via adminDb so guest orders show pieces correctly
+  const { data: itemsRaw } = await (adminDb.from("order_items") as any)
     .select("*")
     .eq("order_id", id);
 
@@ -50,7 +116,7 @@ export default async function OrderDetailPage({
 
   let productIds: string[] = [];
   if (variantIds.length > 0) {
-    const { data: currentVariants } = await (supabase.from("product_variants") as any)
+    const { data: currentVariants } = await (adminDb.from("product_variants") as any)
       .select("id, product_id")
       .in("id", variantIds);
 
@@ -58,7 +124,7 @@ export default async function OrderDetailPage({
   }
 
   // Fetch all variants for matching products
-  const { data: matchedProducts } = await (supabase.from("products") as any)
+  const { data: matchedProducts } = await (adminDb.from("products") as any)
     .select("id, name, product_variants(id, size, stock)")
     .or(
       productIds.length > 0
@@ -85,7 +151,7 @@ export default async function OrderDetailPage({
     };
   });
 
-  const { data: returnsRaw } = await (supabase.from("order_returns") as any)
+  const { data: returnsRaw } = await (adminDb.from("order_returns") as any)
     .select("*")
     .eq("order_id", id)
     .order("created_at", { ascending: false });
@@ -95,7 +161,7 @@ export default async function OrderDetailPage({
   let existingReview: OrderReview | null = null;
   if (order.status === "delivered") {
     try {
-      const { data: revData } = await (supabase.from("order_reviews") as any)
+      const { data: revData } = await (adminDb.from("order_reviews") as any)
         .select("*")
         .eq("order_id", id)
         .maybeSingle();
@@ -111,7 +177,7 @@ export default async function OrderDetailPage({
   const customerName =
     address?.full_name ||
     address?.fullName ||
-    user.user_metadata?.full_name ||
+    user?.user_metadata?.full_name ||
     "Verified Customer";
   const customerCity = address?.city || "India";
   const customerState = address?.state || "";
@@ -119,6 +185,25 @@ export default async function OrderDetailPage({
 
   return (
     <div className="pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto min-h-screen">
+      {/* Unauthenticated notification banner for delivered guest orders */}
+      {!user && (
+        <div className="mb-6 p-4 bg-zinc-900 border border-white/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-white/80">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              Viewing delivered order <strong>#{order.id.slice(0, 8).toUpperCase()}</strong>. Rate your drop below or sign in to save it to your account.
+            </span>
+          </div>
+          <Link
+            href={`/login?next=${encodeURIComponent(`/account/orders/${id}${isRateMode ? "?rate=true" : ""}`)}`}
+            className="inline-flex items-center gap-1.5 shrink-0 bg-white text-black px-3.5 py-1.5 font-bold uppercase tracking-wider text-[11px] hover:bg-white/90 transition-colors"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            Sign In with Google
+          </Link>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <Link
@@ -296,4 +381,3 @@ export default async function OrderDetailPage({
     </div>
   );
 }
-

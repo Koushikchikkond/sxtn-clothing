@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Star, CheckCircle2, Loader2, Sparkles, Edit3 } from "lucide-react";
 import type { OrderReview } from "@/types/database.types";
 
@@ -16,7 +16,7 @@ interface CustomerOrderRatingProps {
 
 const PRESET_TAGS = [
   "Perfect Boxy Fit",
-  "Heavyweight 280 GSM",
+  "Heavyweight 240 GSM",
   "Luxury Quality",
   "Fast Delivery",
   "Insane Silhouette",
@@ -39,6 +39,23 @@ export function CustomerOrderRating({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittedJustNow, setSubmittedJustNow] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("rate") === "true") {
+        if (initialReview) {
+          setIsEditing(true);
+        }
+        setTimeout(() => {
+          const el = document.getElementById("rate-order-section") || document.getElementById("order-rating-section");
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 150);
+      }
+    }
+  }, [initialReview]);
 
   // Ratings only apply to delivered orders
   if (status !== "delivered") return null;
@@ -84,7 +101,7 @@ export function CustomerOrderRating({
   // If review exists and not in editing mode, show the submitted review
   if (review && !isEditing) {
     return (
-      <div className="mt-8 border border-white/10 bg-[#0c0c0c] p-6 sm:p-7 relative overflow-hidden">
+      <div id="order-rating-section" className="mt-8 border border-white/10 bg-[#0c0c0c] p-6 sm:p-7 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
           <div className="flex items-center gap-2">
             <span className="flex items-center text-amber-400">
