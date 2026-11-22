@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Star, CheckCircle2, MapPin, Sparkles } from "lucide-react";
+import { Heart, CheckCircle2, MapPin, Sparkles } from "lucide-react";
 import type { ReviewItem } from "@/lib/reviews";
 
 interface CustomerReviewsMarqueeProps {
@@ -31,7 +31,7 @@ export function CustomerReviewsMarquee({ reviews }: CustomerReviewsMarqueeProps)
       {/* Header */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 text-center mb-12 md:mb-16">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/15 text-[11px] font-mono uppercase tracking-[0.2em] text-white/70 mb-4">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <Sparkles className="w-3.5 h-3.5 text-[#ff6d75]" />
           <span>Verified Customer Reviews</span>
         </div>
 
@@ -39,15 +39,11 @@ export function CustomerReviewsMarquee({ reviews }: CustomerReviewsMarqueeProps)
           RATED BY OUR COMMUNITY
         </h2>
 
-        <p className="mt-3 text-sm md:text-base text-white/60 max-w-xl mx-auto font-sans leading-relaxed">
-          Real feedback on fabric weight, boxy cuts, and delivery from verified customers across India.
-        </p>
-
         {/* Global Rating summary badge */}
-        <div className="mt-5 flex items-center justify-center gap-2 text-xs font-mono uppercase tracking-widest text-amber-400">
-          <span className="flex items-center">
+        <div className="mt-5 flex items-center justify-center gap-2 text-xs font-mono uppercase tracking-widest text-[#ff6d75]">
+          <span className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <Heart key={s} className="w-4 h-4 fill-[#ff6d75] text-[#ff6d75]" />
             ))}
           </span>
           <span className="text-white font-bold ml-1">{avgRating} / 5</span>
@@ -75,17 +71,17 @@ export function CustomerReviewsMarquee({ reviews }: CustomerReviewsMarqueeProps)
               key={`${item.id}-${idx}`}
               className="w-[310px] sm:w-[350px] md:w-[380px] shrink-0 bg-[#0c0c0c] border border-white/10 hover:border-white/30 transition-all duration-300 p-6 flex flex-col justify-between group/card relative"
             >
-              {/* Card Top: Stars & Verified Badge */}
+              {/* Card Top: Hearts & Verified Badge */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center text-amber-400">
+                  <div className="flex items-center gap-1 text-[#ff6d75]">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
+                      <Heart
                         key={i}
                         className={`w-4 h-4 ${
                           i < item.rating
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-white/20"
+                            ? "fill-[#ff6d75] text-[#ff6d75]"
+                            : "text-zinc-600 fill-zinc-800/40"
                         }`}
                       />
                     ))}

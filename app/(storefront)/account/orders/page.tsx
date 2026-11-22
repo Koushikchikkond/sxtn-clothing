@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { claimUserOrdersByEmail } from "@/lib/orders";
 import Link from "next/link";
 import Image from "next/image";
+import { Heart } from "lucide-react";
 import type { Order } from "@/types/database.types";
 
 interface OrderItemRow {
@@ -262,11 +263,16 @@ export default async function OrdersPage() {
                   <div className="px-4 py-2.5 bg-zinc-950 border-x border-b border-white/10 flex items-center justify-between flex-wrap gap-2">
                     {existingReview ? (
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center text-amber-400 text-xs tracking-wider">
+                        <div className="flex items-center gap-1 text-[#ff6d75] text-xs">
                           {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i} className={i < existingReview.rating ? "text-amber-400" : "text-white/20"}>
-                              ★
-                            </span>
+                            <Heart
+                              key={i}
+                              className={`w-3.5 h-3.5 ${
+                                i < existingReview.rating
+                                  ? "fill-[#ff6d75] text-[#ff6d75]"
+                                  : "text-zinc-600 fill-zinc-800/40"
+                              }`}
+                            />
                           ))}
                         </div>
                         <span className="text-[11px] font-mono text-white/70">
@@ -275,16 +281,23 @@ export default async function OrdersPage() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-amber-400 text-xs tracking-widest">★★★★★</span>
+                        <div className="flex items-center gap-1 text-[#ff6d75]">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Heart
+                              key={i}
+                              className="w-3.5 h-3.5 fill-[#ff6d75] text-[#ff6d75]"
+                            />
+                          ))}
+                        </div>
                         <span className="text-white/60 text-xs font-sans">
-                          How does your piece feel?
+                          Rate this drop
                         </span>
                       </div>
                     )}
 
                     <Link
                       href={`/account/orders/${order.id}?rate=true`}
-                      className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-400 hover:text-white underline transition-colors"
+                      className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#ff6d75] hover:text-white underline transition-colors"
                     >
                       {existingReview ? "Edit Review" : "Rate Order & Feedback →"}
                     </Link>

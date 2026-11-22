@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Star, CheckCircle2, Loader2, Sparkles, Edit3 } from "lucide-react";
+import { Heart, CheckCircle2, Loader2, Sparkles, Edit3 } from "lucide-react";
 import type { OrderReview } from "@/types/database.types";
 
 interface CustomerOrderRatingProps {
@@ -13,14 +13,6 @@ interface CustomerOrderRatingProps {
   customerState?: string;
   productName?: string;
 }
-
-const PRESET_TAGS = [
-  "Perfect Boxy Fit",
-  "Heavyweight 240 GSM",
-  "Luxury Quality",
-  "Fast Delivery",
-  "Insane Silhouette",
-];
 
 export function CustomerOrderRating({
   orderId,
@@ -90,32 +82,26 @@ export function CustomerOrderRating({
     }
   }
 
-  function handleTagClick(tag: string) {
-    if (!comment) {
-      setComment(tag);
-    } else if (!comment.includes(tag)) {
-      setComment(`${comment}. ${tag}`);
-    }
-  }
-
   // If review exists and not in editing mode, show the submitted review
   if (review && !isEditing) {
     return (
       <div id="order-rating-section" className="mt-8 border border-white/10 bg-[#0c0c0c] p-6 sm:p-7 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
           <div className="flex items-center gap-2">
-            <span className="flex items-center text-amber-400">
+            <span className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((s) => (
-                <Star
+                <Heart
                   key={s}
-                  className={`w-5 h-5 ${
-                    s <= review.rating ? "fill-amber-400 text-amber-400" : "text-white/20"
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                    s <= review.rating
+                      ? "fill-[#ff6d75] text-[#ff6d75]"
+                      : "text-zinc-600 fill-zinc-800/40"
                   }`}
                 />
               ))}
             </span>
             <span className="text-white font-bold text-sm tracking-widest uppercase ml-1">
-              {review.rating} / 5 Stars
+              {review.rating} / 5 Hearts
             </span>
           </div>
 
@@ -176,7 +162,7 @@ export function CustomerOrderRating({
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display text-xl sm:text-2xl uppercase tracking-wider text-white flex items-center gap-2">
           <span>Rate Your Drop</span>
-          <span className="text-amber-400 text-lg">★★★★★</span>
+          <span className="text-[#ff6d75] text-lg">♥♥♥♥♥</span>
         </h3>
         {isEditing && (
           <button
@@ -190,37 +176,37 @@ export function CustomerOrderRating({
       </div>
 
       <p className="text-white/50 text-xs sm:text-sm mb-6 leading-relaxed max-w-xl">
-        How does your piece fit and feel? Your rating helps fellow streetwear enthusiasts and shapes our next collection drops.
+        How does your piece fit and feel? Your feedback shapes our next collection drops and helps fellow streetwear enthusiasts.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Interactive Star Picker */}
+        {/* Interactive Heart Picker */}
         <div>
           <label className="block text-xs uppercase tracking-widest text-white/60 font-semibold mb-2">
-            Your Rating (1 to 5 Stars)
+            Your Rating (1 to 5 Hearts)
           </label>
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4, 5].map((starValue) => (
+          <div className="flex items-center gap-1.5">
+            {[1, 2, 3, 4, 5].map((heartValue) => (
               <button
-                key={starValue}
+                key={heartValue}
                 type="button"
-                onClick={() => setRating(starValue)}
-                onMouseEnter={() => setHoverRating(starValue)}
+                onClick={() => setRating(heartValue)}
+                onMouseEnter={() => setHoverRating(heartValue)}
                 onMouseLeave={() => setHoverRating(0)}
                 className="p-1 hover:scale-110 active:scale-95 transition-transform cursor-pointer"
-                aria-label={`Rate ${starValue} stars`}
+                aria-label={`Rate ${heartValue} hearts`}
               >
-                <Star
-                  className={`w-7 h-7 sm:w-8 sm:h-8 transition-colors ${
-                    starValue <= activeRating
-                      ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"
-                      : "text-white/20 hover:text-white/40"
+                <Heart
+                  className={`w-7 h-7 sm:w-8 sm:h-8 transition-all ${
+                    heartValue <= activeRating
+                      ? "fill-[#ff6d75] text-[#ff6d75] drop-shadow-[0_0_10px_rgba(255,109,117,0.55)]"
+                      : "text-zinc-600 fill-zinc-800/40 hover:text-[#ff6d75]/50"
                   }`}
                 />
               </button>
             ))}
             <span className="text-xs uppercase tracking-widest text-white/70 ml-2 font-mono">
-              {activeRating === 5 && "Outstanding — 5/5"}
+              {activeRating === 5 && "Loved it — 5/5"}
               {activeRating === 4 && "Great Piece — 4/5"}
               {activeRating === 3 && "Good / Average — 3/5"}
               {activeRating === 2 && "Needs Improvement — 2/5"}
@@ -229,36 +215,17 @@ export function CustomerOrderRating({
           </div>
         </div>
 
-        {/* Quick Tag Suggestions */}
-        <div>
-          <label className="block text-[11px] uppercase tracking-widest text-white/40 mb-2">
-            Quick Feedback Tags:
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {PRESET_TAGS.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => handleTagClick(tag)}
-                className="text-xs px-3 py-1 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/30 rounded-full transition-all"
-              >
-                + {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Text Feedback */}
+        {/* Blank Text Feedback (No preset tags) */}
         <div>
           <label className="block text-xs uppercase tracking-widest text-white/60 font-semibold mb-2">
-            Detailed Review (Optional)
+            Customer Feedback
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            rows={3}
-            placeholder="Tell us about the fabric weight, neck ribbing, fit, or packaging..."
-            className="w-full bg-black border border-white/15 focus:border-white text-white text-sm p-3.5 outline-none transition-colors placeholder:text-white/30 resize-none font-sans"
+            rows={4}
+            placeholder="Write your review here... Tell us about the fabric weight, neck ribbing, fit, or packaging."
+            className="w-full bg-black border border-white/15 focus:border-[#ff6d75] text-white text-sm p-3.5 outline-none transition-colors placeholder:text-white/30 resize-none font-sans rounded-none"
           />
         </div>
 
@@ -278,16 +245,10 @@ export function CustomerOrderRating({
           <button
             type="submit"
             disabled={loading}
-            className="bg-white text-black px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/90 disabled:opacity-50 transition-colors flex items-center gap-2 cursor-pointer"
+            className="bg-white hover:bg-white/90 text-black px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-lg hover:shadow-white/10"
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Submitting Rating...
-              </>
-            ) : (
-              "Submit Rating & Review →"
-            )}
+            {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {isEditing ? "Update Feedback" : "Submit Rating & Review"}
           </button>
         </div>
       </form>
