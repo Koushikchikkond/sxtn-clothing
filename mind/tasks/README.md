@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-22-interface-craft-cards-review-showcase|2026-11-22 Interface Craft Cards Horizontal Scroll Customer Review Showcase]]
 - [[2026-11-22-heart-rating-and-review-cleanup|2026-11-22 Heart Rating Icon Integration, Remove Preset Tags, and Clean Review Subtitle]]
 - [[2026-11-21-fix-order-rating-404-and-email-updates|2026-11-21 Fix Order Rating 404, Link Guest Orders, and Update Delivery Email (240 GSM & 6xtn.in@gmail.com)]]
 - [[2026-11-21-coverflow-carousel-community-showcase|2026-11-21 Replace 3D Circular Showcase with Coverflow Carousel Animation]]
