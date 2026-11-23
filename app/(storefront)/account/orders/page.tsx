@@ -232,6 +232,15 @@ export default async function OrdersPage() {
                         {productSummary}
                       </p>
 
+                      {items.some((i) => i.size) && (
+                        <p className="text-white/50 text-xs font-mono mt-0.5">
+                          {items
+                            .map((i) => `${i.size ? `Size ${i.size}` : ""}${i.quantity > 1 ? ` × ${i.quantity}` : ""}`)
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
+
                       <p className="text-white/30 text-xs mt-0.5 font-mono">
                         {new Date(order.created_at).toLocaleDateString("en-IN", {
                           day: "numeric",
