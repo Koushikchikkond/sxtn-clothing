@@ -817,10 +817,11 @@ export default function CheckoutPage() {
 
                   {/* Secondary Phone */}
                   <div className="sm:col-span-1">
-                    <label className={labelClass}>Secondary / Alternative Phone</label>
+                    <label className={labelClass}>Secondary / Alternative Phone *</label>
                     <input
                       name="secondaryPhone"
                       type="tel"
+                      required
                       pattern="[0-9]{10}"
                       maxLength={10}
                       value={form.secondaryPhone}
@@ -831,7 +832,7 @@ export default function CheckoutPage() {
                         }))
                       }
                       className={inputClass}
-                      placeholder="10-digit alternate (optional)"
+                      placeholder="10-digit alternate mobile"
                     />
                     {form.phone &&
                       form.secondaryPhone &&

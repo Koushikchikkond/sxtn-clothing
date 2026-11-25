@@ -14,6 +14,7 @@ This directory stores historical and active tasks executed by AI agents (Antigra
 - [[security]]: Security guidelines
 
 ## Task Log
+- [[2026-11-25-require-secondary-phone|2026-11-25 Make Secondary / Alternative Phone Number Compulsory]]
 - [[2026-11-25-address-alternate-phone|2026-11-25 Add Alternative Phone Number (Primary & Secondary) to Address List]]
 - [[2026-11-23-update-order-698be244-size|2026-11-23 Update Order #698BE244 Item Size from L to S]]
 - [[2026-11-22-interface-craft-cards-review-showcase|2026-11-22 Interface Craft Cards Horizontal Scroll Customer Review Showcase]]

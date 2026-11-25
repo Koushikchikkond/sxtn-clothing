@@ -45,13 +45,11 @@ export function validatePhonePair(
   if (!/^[0-9]{10}$/.test(pri)) {
     return "Please enter a valid 10-digit primary phone number.";
   }
-  if (sec.length > 0) {
-    if (!/^[0-9]{10}$/.test(sec)) {
-      return "Please enter a valid 10-digit secondary phone number.";
-    }
-    if (sec === pri) {
-      return "Primary and secondary phone numbers cannot be the same.";
-    }
+  if (!/^[0-9]{10}$/.test(sec)) {
+    return "Please enter a valid 10-digit secondary phone number.";
+  }
+  if (sec === pri) {
+    return "Primary and secondary phone numbers cannot be the same.";
   }
   return null;
 }

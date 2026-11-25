@@ -312,13 +312,14 @@ export default function AddressesPage() {
               />
             </div>
             <div>
-              <label className={labelClass}>Secondary / Alternative Phone</label>
+              <label className={labelClass}>Secondary / Alternative Phone *</label>
               <input
+                required
                 type="tel"
                 pattern="[0-9]{10}"
                 maxLength={10}
                 className={inputClass}
-                placeholder="10-digit alternate number (optional)"
+                placeholder="10-digit alternate mobile number"
                 value={form.secondary_phone}
                 onChange={(e) => {
                   setFormError(null);
