@@ -82,7 +82,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               )}
               <p>{address.line1}{address.line2 ? `, ${address.line2}` : ""}</p>
               <p>{address.city}, {address.state} — {address.pincode}</p>
-              {address.phone && <p>📞 {address.phone}</p>}
+              {address.phone && <p>📞 Primary: {address.phone}</p>}
+              {(address.secondaryPhone || address.secondary_phone) && (
+                <p>📞 Secondary: {address.secondaryPhone || address.secondary_phone}</p>
+              )}
             </div>
           ) : <p style={{ color: "#999", fontSize: "0.85rem" }}>No address on file</p>}
         </div>

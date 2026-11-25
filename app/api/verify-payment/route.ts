@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { TablesInsert } from "@/types/database.types";
 import { sendOrderConfirmationEmail } from "@/lib/email/resend";
+import { encodeAddressMeta } from "@/lib/address";
 
 export const runtime = "nodejs";
 
@@ -169,7 +170,11 @@ export async function POST(req: NextRequest) {
                 full_name: address.fullName || address.full_name || "",
                 phone: address.phone || "",
                 line1: address.line1 || "",
-                line2: address.line2 || null,
+                line2: encodeAddressMeta(
+                  "Home",
+                  address.line2 || "",
+                  address.secondaryPhone || address.secondary_phone
+                ),
                 city: address.city || "",
                 state: address.state || "",
                 pincode: address.pincode || "",

@@ -5,26 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Address } from "@/types/database.types";
-import { Plus, Trash2, MapPin, Mail, CheckCircle2, Edit2, Tag } from "lucide-react";
+import { Plus, Trash2, MapPin, Mail, CheckCircle2, Edit2 } from "lucide-react";
 import { INDIAN_STATES, getCitiesForState } from "@/lib/data/india-locations";
-
-function parseAddressTag(line2: string | null): { tag: string; cleanLine2: string } {
-  if (!line2) return { tag: "Home", cleanLine2: "" };
-  const match = line2.match(/^\[(.*?)\]\s*(.*)$/);
-  if (match) {
-    return { tag: match[1].trim() || "Home", cleanLine2: match[2].trim() };
-  }
-  return { tag: "Home", cleanLine2: line2.trim() };
-}
-
-function encodeAddressLine2(tag: string, cleanLine2: string): string | null {
-  const clean = cleanLine2.trim();
-  const normalizedTag = tag.trim() || "Home";
-  if (clean) {
-    return `[${normalizedTag}] ${clean}`;
-  }
-  return `[${normalizedTag}]`;
-}
+import {
+  parseAddressMeta,
+  encodeAddressMeta,
+  normalizePhoneDigits,
+  validatePhonePair,
+} from "@/lib/address";
 
 export default function AddressesPage() {
   const supabase = createClient();
@@ -37,11 +25,13 @@ export default function AddressesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [customCityMode, setCustomCityMode] = useState(false);
 
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    secondary_phone: "",
     line1: "",
     line2: "",
     tag: "Home",
@@ -103,6 +93,7 @@ export default function AddressesPage() {
     setForm({
       full_name: "",
       phone: "",
+      secondary_phone: "",
       line1: "",
       line2: "",
       tag: "Home",
@@ -114,10 +105,11 @@ export default function AddressesPage() {
     setEditingId(null);
     setShowForm(false);
     setCustomCityMode(false);
+    setFormError(null);
   };
 
   const handleEdit = (addr: Address) => {
-    const { tag, cleanLine2 } = parseAddressTag(addr.line2);
+    const { tag, secondaryPhone, cleanLine2 } = parseAddressMeta(addr.line2);
     const cities = addr.state ? getCitiesForState(addr.state) : [];
     const isCustomCity = addr.city && !cities.includes(addr.city);
 
@@ -125,6 +117,7 @@ export default function AddressesPage() {
     setForm({
       full_name: addr.full_name || "",
       phone: addr.phone || "",
+      secondary_phone: secondaryPhone,
       line1: addr.line1 || "",
       line2: cleanLine2,
       tag: tag || "Home",
@@ -134,6 +127,7 @@ export default function AddressesPage() {
       is_default: addr.is_default || false,
     });
     setCustomCityMode(Boolean(isCustomCity));
+    setFormError(null);
     setShowForm(true);
 
     setTimeout(() => {
@@ -143,17 +137,28 @@ export default function AddressesPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    const phoneErr = validatePhonePair(form.phone, form.secondary_phone);
+    if (phoneErr) {
+      setFormError(phoneErr);
+      return;
+    }
+
     setSaving(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setSaving(false);
+      return;
+    }
 
     const payload = {
       full_name: form.full_name.trim(),
-      phone: form.phone.trim(),
+      phone: normalizePhoneDigits(form.phone),
       line1: form.line1.trim(),
-      line2: encodeAddressLine2(form.tag, form.line2),
+      line2: encodeAddressMeta(form.tag, form.line2, form.secondary_phone),
       city: form.city.trim(),
       state: form.state.trim(),
       pincode: form.pincode.trim(),
@@ -280,7 +285,7 @@ export default function AddressesPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            <div className="sm:col-span-2">
               <label className={labelClass}>Full Name *</label>
               <input
                 required
@@ -291,18 +296,45 @@ export default function AddressesPage() {
               />
             </div>
             <div>
-              <label className={labelClass}>Phone *</label>
+              <label className={labelClass}>Primary Phone *</label>
               <input
                 required
                 type="tel"
                 pattern="[0-9]{10}"
+                maxLength={10}
                 className={inputClass}
-                placeholder="10-digit mobile number"
+                placeholder="10-digit primary mobile number"
                 value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onChange={(e) => {
+                  setFormError(null);
+                  setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }));
+                }}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Secondary / Alternative Phone</label>
+              <input
+                type="tel"
+                pattern="[0-9]{10}"
+                maxLength={10}
+                className={inputClass}
+                placeholder="10-digit alternate number (optional)"
+                value={form.secondary_phone}
+                onChange={(e) => {
+                  setFormError(null);
+                  setForm((f) => ({ ...f, secondary_phone: e.target.value.replace(/\D/g, "").slice(0, 10) }));
+                }}
               />
             </div>
           </div>
+
+          {((form.phone && form.secondary_phone && normalizePhoneDigits(form.phone) === normalizePhoneDigits(form.secondary_phone)) || formError) && (
+            <p className="text-xs text-red-400 border border-red-500/30 bg-red-500/10 px-3 py-2">
+              {form.phone && form.secondary_phone && normalizePhoneDigits(form.phone) === normalizePhoneDigits(form.secondary_phone)
+                ? "Primary and secondary phone numbers cannot be the same."
+                : formError}
+            </p>
+          )}
 
           <div>
             <label className={labelClass}>Address Line 1 (Flat, House, Building, Street) *</label>
@@ -452,7 +484,7 @@ export default function AddressesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {addresses.map((addr) => {
-            const { tag, cleanLine2 } = parseAddressTag(addr.line2);
+            const { tag, secondaryPhone, cleanLine2 } = parseAddressMeta(addr.line2);
 
             return (
               <div
@@ -482,10 +514,18 @@ export default function AddressesPage() {
                   <br />
                   {addr.city}, {addr.state} — {addr.pincode}
                 </p>
-                <p className="text-white/40 text-xs mt-3 flex items-center gap-2">
-                  <span>Phone:</span>
-                  <span className="text-white/70 font-mono">{addr.phone}</span>
-                </p>
+                <div className="text-white/40 text-xs mt-3 space-y-1">
+                  <p className="flex items-center gap-2">
+                    <span>Primary:</span>
+                    <span className="text-white/70 font-mono">{addr.phone}</span>
+                  </p>
+                  {secondaryPhone && (
+                    <p className="flex items-center gap-2">
+                      <span>Secondary:</span>
+                      <span className="text-white/70 font-mono">{secondaryPhone}</span>
+                    </p>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10 flex-wrap">
                   <button

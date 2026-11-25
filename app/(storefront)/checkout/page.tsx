@@ -24,11 +24,18 @@ import { INDIAN_STATES, getCitiesForState } from "@/lib/data/india-locations";
 import { calculateOrderPricing } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { isValidEmailFormat, suggestEmailCorrection } from "@/lib/email-validator";
+import {
+  parseAddressMeta,
+  encodeAddressMeta,
+  normalizePhoneDigits,
+  validatePhonePair,
+} from "@/lib/address";
 
 interface AddressForm {
   fullName: string;
   email: string;
   phone: string;
+  secondaryPhone: string;
   line1: string;
   line2: string;
   city: string;
@@ -65,6 +72,7 @@ export default function CheckoutPage() {
     fullName: "",
     email: "",
     phone: "",
+    secondaryPhone: "",
     line1: "",
     line2: "",
     city: "",
@@ -115,13 +123,15 @@ export default function CheckoutPage() {
           if (addressList.length > 0) {
             // Pick default address or first address
             const defaultAddr = addressList.find((a) => a.is_default) || addressList[0];
+            const { secondaryPhone, cleanLine2 } = parseAddressMeta(defaultAddr.line2);
             setSelectedAddressId(defaultAddr.id);
             setForm({
               fullName: defaultAddr.full_name,
               email: userEmail,
               phone: defaultAddr.phone,
+              secondaryPhone,
               line1: defaultAddr.line1,
-              line2: defaultAddr.line2 || "",
+              line2: cleanLine2,
               city: defaultAddr.city,
               state: defaultAddr.state,
               pincode: defaultAddr.pincode,
@@ -164,14 +174,16 @@ export default function CheckoutPage() {
   }
 
   function handleSelectSavedAddress(addr: Address) {
+    const { secondaryPhone, cleanLine2 } = parseAddressMeta(addr.line2);
     setSelectedAddressId(addr.id);
     setIsCustomCity(false);
     setForm((prev) => ({
       ...prev,
       fullName: addr.full_name,
       phone: addr.phone,
+      secondaryPhone,
       line1: addr.line1,
-      line2: addr.line2 || "",
+      line2: cleanLine2,
       city: addr.city,
       state: addr.state,
       pincode: addr.pincode,
@@ -187,6 +199,7 @@ export default function CheckoutPage() {
       ...prev,
       fullName: "",
       phone: "",
+      secondaryPhone: "",
       line1: "",
       line2: "",
       city: "",
@@ -308,8 +321,9 @@ export default function CheckoutPage() {
       if (!form.fullName.trim()) {
         throw new Error("Please enter your full name.");
       }
-      if (!form.phone || form.phone.length < 10) {
-        throw new Error("Please enter a valid 10-digit mobile number.");
+      const phoneErr = validatePhonePair(form.phone, form.secondaryPhone);
+      if (phoneErr) {
+        throw new Error(phoneErr);
       }
       if (!form.line1.trim()) {
         throw new Error("Please enter address line 1.");
@@ -395,9 +409,9 @@ export default function CheckoutPage() {
               .insert({
                 user_id: user.id,
                 full_name: form.fullName.trim(),
-                phone: form.phone.trim(),
+                phone: normalizePhoneDigits(form.phone),
                 line1: form.line1.trim(),
-                line2: form.line2.trim() || null,
+                line2: encodeAddressMeta("Home", form.line2, form.secondaryPhone),
                 city: form.city.trim(),
                 state: form.state.trim(),
                 pincode: form.pincode.trim(),
@@ -419,7 +433,8 @@ export default function CheckoutPage() {
         fullName: form.fullName.trim(),
         full_name: form.fullName.trim(),
         email: confirmedEmail.trim(),
-        phone: form.phone.trim(),
+        phone: normalizePhoneDigits(form.phone),
+        secondaryPhone: normalizePhoneDigits(form.secondaryPhone) || null,
         line1: form.line1.trim(),
         line2: form.line2.trim() || null,
         city: form.city.trim(),
@@ -644,9 +659,7 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {savedAddresses.map((addr) => {
                       const isSelected = selectedAddressId === addr.id;
-                      const tagMatch = addr.line2?.match(/^\[(.*?)\]\s*(.*)$/);
-                      const addrTag = tagMatch ? tagMatch[1] : null;
-                      const cleanLine2 = tagMatch ? tagMatch[2] : addr.line2;
+                      const { tag: addrTag, secondaryPhone, cleanLine2 } = parseAddressMeta(addr.line2);
 
                       return (
                         <div
@@ -681,9 +694,10 @@ export default function CheckoutPage() {
                             <br />
                             {addr.city}, {addr.state} — {addr.pincode}
                           </p>
-                          <p className="text-white/40 text-[11px] mt-2 font-mono">
-                            {addr.phone}
-                          </p>
+                          <div className="text-white/40 text-[11px] mt-2 font-mono space-y-0.5">
+                            <p>Primary: {addr.phone}</p>
+                            {secondaryPhone && <p>Secondary: {secondaryPhone}</p>}
+                          </div>
 
                           {isSelected && (
                             <div className="mt-3 pt-2 border-t border-white/10 flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-white font-bold">
@@ -768,7 +782,7 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Full Name */}
-                  <div className="sm:col-span-1">
+                  <div className="sm:col-span-2">
                     <label className={labelClass}>Full Name *</label>
                     <input
                       name="fullName"
@@ -780,9 +794,9 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  {/* Phone */}
+                  {/* Primary Phone */}
                   <div className="sm:col-span-1">
-                    <label className={labelClass}>Phone Number *</label>
+                    <label className={labelClass}>Primary Phone Number *</label>
                     <input
                       name="phone"
                       type="tel"
@@ -790,10 +804,42 @@ export default function CheckoutPage() {
                       pattern="[0-9]{10}"
                       maxLength={10}
                       value={form.phone}
-                      onChange={handleChange}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                        }))
+                      }
                       className={inputClass}
-                      placeholder="10-digit mobile number"
+                      placeholder="10-digit primary mobile"
                     />
+                  </div>
+
+                  {/* Secondary Phone */}
+                  <div className="sm:col-span-1">
+                    <label className={labelClass}>Secondary / Alternative Phone</label>
+                    <input
+                      name="secondaryPhone"
+                      type="tel"
+                      pattern="[0-9]{10}"
+                      maxLength={10}
+                      value={form.secondaryPhone}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          secondaryPhone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                        }))
+                      }
+                      className={inputClass}
+                      placeholder="10-digit alternate (optional)"
+                    />
+                    {form.phone &&
+                      form.secondaryPhone &&
+                      normalizePhoneDigits(form.phone) === normalizePhoneDigits(form.secondaryPhone) && (
+                        <p className="mt-1.5 text-xs text-red-400">
+                          Primary and secondary phone numbers cannot be the same.
+                        </p>
+                      )}
                   </div>
 
                   {/* Address Line 1 */}

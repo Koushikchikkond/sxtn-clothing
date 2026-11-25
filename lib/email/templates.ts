@@ -15,6 +15,8 @@ export interface EmailAddress {
   fullName?: string;
   full_name?: string;
   phone?: string;
+  secondaryPhone?: string | null;
+  secondary_phone?: string | null;
   line1?: string;
   line2?: string | null;
   city?: string;
@@ -304,7 +306,8 @@ export function getOrderConfirmationHtml(params: {
       <div style="font-size: 12px; color: #888; line-height: 1.5;">
         ${address.line1 || ""}${address.line2 ? `, ${address.line2}` : ""}<br>
         ${address.city || ""}, ${address.state || ""} — ${address.pincode || ""}<br>
-        ${address.phone ? `Phone: ${address.phone}` : ""}
+        ${address.phone ? `Primary Phone: ${address.phone}` : ""}
+        ${address.secondaryPhone || address.secondary_phone ? `<br>Secondary Phone: ${address.secondaryPhone || address.secondary_phone}` : ""}
       </div>
     </div>
 

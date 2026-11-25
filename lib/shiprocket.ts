@@ -443,6 +443,8 @@ export function buildShiprocketPayload(order: {
   // Clean phone to ensure 10 digits
   const rawPhone = addr.phone || "";
   const cleanPhone = rawPhone.replace(/\D/g, "").slice(-10) || "9999999999";
+  const altPhone = (addr.secondaryPhone || addr.secondary_phone || "").replace(/\D/g, "").slice(-10);
+  const addressLine2 = [addr.line2 || "", altPhone ? `Alt: ${altPhone}` : ""].filter(Boolean).join(" | ");
 
   const email = addr.email || order.guest_email || "support@6xtn.in";
 
@@ -460,7 +462,7 @@ export function buildShiprocketPayload(order: {
     billing_customer_name: firstName,
     billing_last_name: lastName,
     billing_address: addr.line1 || addr.address || "Street Address",
-    billing_address_2: addr.line2 || "",
+    billing_address_2: addressLine2,
     billing_city: addr.city || "City",
     billing_pincode: addr.pincode || addr.zip || "560001",
     billing_state: addr.state || "Karnataka",
@@ -471,7 +473,7 @@ export function buildShiprocketPayload(order: {
     shipping_customer_name: firstName,
     shipping_last_name: lastName,
     shipping_address: addr.line1 || addr.address || "Street Address",
-    shipping_address_2: addr.line2 || "",
+    shipping_address_2: addressLine2,
     shipping_city: addr.city || "City",
     shipping_pincode: addr.pincode || addr.zip || "560001",
     shipping_state: addr.state || "Karnataka",

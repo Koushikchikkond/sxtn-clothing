@@ -362,7 +362,10 @@ export default async function OrderDetailPage({
               <p>
                 {address.city}, {address.state} — {address.pincode}
               </p>
-              <p className="pt-1">{address.phone}</p>
+              <p className="pt-1">Primary: {address.phone}</p>
+              {(address.secondaryPhone || address.secondary_phone) && (
+                <p>Secondary: {address.secondaryPhone || address.secondary_phone}</p>
+              )}
             </div>
           ) : (
             <p className="text-white/30 text-sm">No address on record.</p>
